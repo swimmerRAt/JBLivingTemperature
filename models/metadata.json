@@ -1,0 +1,7 @@
+{
+  "model_name": "baseline_living_region_score",
+  "description": "MVP heuristic model for Jeonbuk living-area ranking",
+  "version": "0.1.0",
+  "status": "baseline",
+  "notes": "Future replacement candidates: RandomForest, LightGBM, Time-Series panel model"
+}

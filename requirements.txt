@@ -1,0 +1,8 @@
+pandas>=2.2.0
+geopandas>=0.14.0
+scikit-learn>=1.4.0
+folium>=0.15.0
+streamlit>=1.36.0
+streamlit-folium>=0.20.0
+plotly>=5.22.0
+PyYAML>=6.0.1

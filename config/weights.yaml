@@ -1,0 +1,14 @@
+default:
+  transport: 0.30
+  medical: 0.20
+  living: 0.20
+  youth: 0.10
+  stability: 0.20
+
+scenario:
+  low_car:
+    transport: 0.40
+    medical: 0.25
+    living: 0.20
+    youth: 0.05
+    stability: 0.10
