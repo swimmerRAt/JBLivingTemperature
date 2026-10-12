@@ -1,7 +1,14 @@
 {
-  "model_name": "baseline_living_region_score",
-  "description": "MVP heuristic model for Jeonbuk living-area ranking",
-  "version": "0.1.0",
+  "model_name": "jeonbuk_living_temperature",
+  "description": "Explainable regional livability score built from population, housing, healthcare, and transport indicators",
+  "version": "0.2.0",
   "status": "baseline",
-  "notes": "Future replacement candidates: RandomForest, LightGBM, Time-Series panel model"
+  "sources": [
+    "population_projection",
+    "population_structure",
+    "vacant_housing",
+    "healthcare_facilities",
+    "transport_access_time"
+  ],
+  "notes": "Score components are normalized to 0-100 and combined with user-adjustable weights. Future replacement candidates: RandomForest, LightGBM, Time-Series panel model."
 }

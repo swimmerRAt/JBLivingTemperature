@@ -1,0 +1,31 @@
+name: Local Qwen Coding Agent
+version: 1.0.0
+schema: v1
+
+models:
+  - name: FAST - Qwen3 Coder 30B
+    provider: ollama
+    model: qwen3-coder:30b
+    apiBase: http://127.0.0.1:11434
+    roles:
+      - chat
+      - edit
+      - apply
+    capabilities:
+      - tool_use
+    defaultCompletionOptions:
+      contextLength: 8192
+
+  - name: DEEP - Qwen3.8 27B
+    provider: ollama
+    model: qwen3.8:27b-mlx
+    apiBase: http://127.0.0.1:11434
+    roles:
+      - chat
+      - edit
+      - apply
+    capabilities:
+      - tool_use
+    defaultCompletionOptions:
+      contextLength: 8192
+      

@@ -18,9 +18,10 @@ def create_folium_map(df: pd.DataFrame) -> folium.Map:
     m = folium.Map(location=[center_lat, center_lon], zoom_start=9, tiles="CartoDB positron")
 
     for _, row in df.iterrows():
-        temp = row.get("no_car_temperature", row["overall_score"])
-        color = "#d73027" if temp >= 80 else "#fc8d59" if temp >= 60 else "#fee08b" if temp >= 40 else "#91bfdb"
-        risk_grade = _risk_grade(float(row["infrastructure_stability"]))
+        temp = row.get("living_score", row.get("no_car_temperature", row.get("overall_score", 50)))
+        color = "#2d9d78" if temp >= 70 else "#efb34d" if temp >= 50 else "#d96161"
+        risk_grade = row.get("risk_grade", _risk_grade(float(row.get("infrastructure_stability", 50))))
+        district = row.get("district", "")
         folium.CircleMarker(
             location=[row["lat"], row["lon"]],
             radius=10,
@@ -29,22 +30,20 @@ def create_folium_map(df: pd.DataFrame) -> folium.Map:
             fill_color=color,
             fill_opacity=0.8,
             popup=(
-                f"{row['city']} {row['district']}<br>"
-                f"무차량 생활 온도: {temp:.1f}<br>"
-                f"종합 점수: {row['overall_score']:.1f}<br>"
-                f"교통: {row['transport_score']:.1f}<br>"
-                f"의료: {row['medical_score']:.1f}<br>"
-                f"인프라 위험 등급: {risk_grade}"
+                f"{row['city']} {district}<br>"
+                f"생활 온도: {float(temp):.1f}<br>"
+                f"인구: {float(row.get('population', 0)):,.0f}<br>"
+                f"청년 비율: {float(row.get('youth_ratio', 0)):.1f}%<br>"
+                f"위험 등급: {risk_grade}"
             ),
         ).add_to(m)
 
     legend_html = """
     <div style="position: fixed; bottom: 30px; left: 30px; z-index: 9999; background: white; border: 1px solid #ccc; padding: 10px; font-size: 12px;">
-      <b>무차량 생활 온도</b><br>
-      <span style="color:#d73027;">●</span> 80~100 매우 쉬움<br>
-      <span style="color:#fc8d59;">●</span> 60~79 양호<br>
-      <span style="color:#fee08b;">●</span> 40~59 보통<br>
-      <span style="color:#91bfdb;">●</span> 0~39 어려움
+      <b>생활 온도</b><br>
+      <span style="color:#2d9d78;">●</span> 70~100 안정<br>
+      <span style="color:#efb34d;">●</span> 50~69 관찰<br>
+      <span style="color:#d96161;">●</span> 0~49 위험
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))
