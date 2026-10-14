@@ -1,4 +1,4 @@
-from src.ui import build_status_cards, format_metric
+from src.ui import build_forecast_rows, build_status_cards, format_metric
 
 
 def test_format_metric_handles_none_and_percentages():
@@ -7,18 +7,56 @@ def test_format_metric_handles_none_and_percentages():
     assert format_metric(-2.3, suffix="%") == "-2.3%"
 
 
-def test_build_status_cards_uses_dashboard_labels_and_selected_row():
+def test_build_status_cards_show_score_grade_and_forecast():
     snapshot = {
         "selected_region": {
-            "city": "전주시",
+            "region_name": "전주시 효자4동",
             "living_score": 72.4,
-            "risk_grade": "안정",
-            "population": 655000,
-            "population_change": -0.6,
+            "living_grade": "B",
+            "youth_forecast_year": 2028,
+            "youth_forecast_change_3y": -8.2,
+            "youth_forecast_change_low": -15.0,
+            "youth_forecast_change_high": 1.0,
+            "forecast_stage": "주의",
+            "youth_risk_stage": "주의",
+            "business_risk_stage": "안정",
         }
     }
 
     cards = build_status_cards(snapshot)
 
-    assert [card["label"] for card in cards] == ["생활 온도", "위험 등급", "인구", "인구 증감"]
+    assert [card["label"] for card in cards] == ["생활 점수", "상대 등급", "3년 후 청년 인구", "3년 감소 위험"]
     assert cards[0]["value"] == "72.4"
+    assert cards[1]["value"] == "B"
+    assert cards[2]["value"] == "-8.2%"
+    assert "2028년 예측" in cards[2]["detail"]
+    assert cards[3]["value"] == "주의"
+
+
+def test_status_cards_say_when_no_forecast_is_connected():
+    cards = build_status_cards({"selected_region": {"living_score": 50.0, "living_grade": "C"}})
+    assert cards[2]["detail"] == "예측 미연결"
+    assert cards[3]["value"] == "데이터 없음"
+
+
+def test_forecast_rows_follow_the_planning_table():
+    rows = build_forecast_rows({
+        "youth_forecast": 920.0, "youth_forecast_change_3y": -8.0, "youth_risk_stage": "주의",
+        "business_count_latest": 310, "business_statute_meets": True, "business_statute_by_peak": True,
+        "business_drawdown": 0.07, "business_decline_prob_1y": 0.8, "business_decline_prob_3y": 0.6,
+        "business_risk_stage": "위험", "first_risk_sector": "운수 및 창고업", "first_risk_prob_1y": 0.2, "first_risk_prob_3y": 0.3,
+    })
+    assert rows.columns.tolist() == ["항목", "현재", "3년 예측", "위험 단계"]
+    assert rows.iloc[0]["현재"] == "1,000명"
+    assert rows.iloc[3]["위험 단계"] == "위험"
+    assert rows.iloc[3]["현재"] == "310개 · 해당(최고치 대비 5%↓) · 최고치 대비 -7.0%"
+    assert rows.iloc[4]["현재"] == "운수 및 창고업"
+
+
+def test_forecast_rows_show_extinction_index_tiers():
+    rows = build_forecast_rows({"extinction_risk_index": 0.41, "extinction_risk_tier": "소멸위험진입",
+                                "extinction_risk_index_forecast": 0.36, "extinction_risk_tier_forecast": "소멸위험진입",
+                                "youth_risk_stage": "위험"})
+    index_row = rows[rows["항목"].str.startswith("지방소멸위험지수")].iloc[0]
+    assert index_row["현재"] == "0.41 (소멸위험진입)"
+    assert index_row["위험 단계"] == "위험"

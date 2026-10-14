@@ -1,0 +1,705 @@
+{
+  "generated_at": "2026-10-14T10:50:05",
+  "youth_migration_check": {
+    "correlation": 0.995595486615506,
+    "ratio": 1.0301107668313212,
+    "rows": 169
+  },
+  "youth_forecast": {
+    "method": "lgbm_direct",
+    "rows": 2390,
+    "interval_coverage_80": 0.7911694510739857,
+    "backtest": {
+      "no_change": {
+        "mae_pp": 19.4206,
+        "median_ae_pp": 18.4741,
+        "weighted_mae_pp": 14.6602,
+        "youth_mae_people": 241.1217,
+        "province_error_pct": 10.2188,
+        "province_origin_abs_error_pct": 10.1976
+      },
+      "trend_3y": {
+        "mae_pp": 12.3632,
+        "median_ae_pp": 7.9945,
+        "weighted_mae_pp": 12.2116,
+        "youth_mae_people": 200.8481,
+        "province_error_pct": 3.8015,
+        "province_origin_abs_error_pct": 3.7381
+      },
+      "aging_only": {
+        "mae_pp": 18.7951,
+        "median_ae_pp": 17.804,
+        "weighted_mae_pp": 14.1946,
+        "youth_mae_people": 233.464,
+        "province_error_pct": 8.7616,
+        "province_origin_abs_error_pct": 8.7368
+      },
+      "hamilton_perry": {
+        "mae_pp": 10.7858,
+        "median_ae_pp": 6.6282,
+        "weighted_mae_pp": 10.8484,
+        "youth_mae_people": 178.4267,
+        "province_error_pct": 2.1871,
+        "province_origin_abs_error_pct": 2.1371
+      },
+      "lgbm_direct": {
+        "mae_pp": 10.1448,
+        "median_ae_pp": 6.7681,
+        "weighted_mae_pp": 8.657,
+        "youth_mae_people": 142.3838,
+        "province_error_pct": -0.4059,
+        "province_origin_abs_error_pct": 1.8444
+      },
+      "lgbm_residual": {
+        "mae_pp": 10.3139,
+        "median_ae_pp": 6.5263,
+        "weighted_mae_pp": 9.6323,
+        "youth_mae_people": 158.4249,
+        "province_error_pct": -0.1648,
+        "province_origin_abs_error_pct": 1.3002
+      }
+    }
+  },
+  "business_total": {
+    "1y": [
+      {
+        "frame": "전체",
+        "method": "sector_rate",
+        "rows": 1936,
+        "event_rate": 0.2221,
+        "roc_auc": 0.4623,
+        "pr_auc": 0.2071,
+        "brier": 0.1814
+      },
+      {
+        "frame": "전체",
+        "method": "past_decline",
+        "rows": 1936,
+        "event_rate": 0.2221,
+        "roc_auc": 0.7606,
+        "pr_auc": 0.5278,
+        "brier": NaN
+      },
+      {
+        "frame": "전체",
+        "method": "current_status",
+        "rows": 1936,
+        "event_rate": 0.2221,
+        "roc_auc": 0.7916,
+        "pr_auc": 0.593,
+        "brier": NaN
+      },
+      {
+        "frame": "전체",
+        "method": "logistic",
+        "rows": 1936,
+        "event_rate": 0.2221,
+        "roc_auc": 0.8494,
+        "pr_auc": 0.729,
+        "brier": 0.1086
+      },
+      {
+        "frame": "전체",
+        "method": "lgbm",
+        "rows": 1936,
+        "event_rate": 0.2221,
+        "roc_auc": 0.8473,
+        "pr_auc": 0.7042,
+        "brier": 0.1119
+      },
+      {
+        "frame": "전체",
+        "method": "ensemble",
+        "rows": 1936,
+        "event_rate": 0.2221,
+        "roc_auc": 0.8503,
+        "pr_auc": 0.7243,
+        "brier": 0.1083
+      },
+      {
+        "frame": "전체",
+        "method": "calibrated",
+        "rows": 1936,
+        "event_rate": 0.2221,
+        "roc_auc": 0.8383,
+        "pr_auc": 0.701,
+        "brier": 0.1078
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "sector_rate",
+        "rows": 1694,
+        "event_rate": 0.2326,
+        "roc_auc": 0.4187,
+        "pr_auc": 0.2058,
+        "brier": 0.1869
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "past_decline",
+        "rows": 1694,
+        "event_rate": 0.2326,
+        "roc_auc": 0.7529,
+        "pr_auc": 0.5513,
+        "brier": NaN
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "current_status",
+        "rows": 1694,
+        "event_rate": 0.2326,
+        "roc_auc": 0.8213,
+        "pr_auc": 0.6287,
+        "brier": NaN
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "logistic",
+        "rows": 1694,
+        "event_rate": 0.2326,
+        "roc_auc": 0.8505,
+        "pr_auc": 0.7442,
+        "brier": 0.1079
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "lgbm",
+        "rows": 1694,
+        "event_rate": 0.2326,
+        "roc_auc": 0.8542,
+        "pr_auc": 0.7266,
+        "brier": 0.11
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "ensemble",
+        "rows": 1694,
+        "event_rate": 0.2326,
+        "roc_auc": 0.8542,
+        "pr_auc": 0.7457,
+        "brier": 0.107
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "calibrated",
+        "rows": 1694,
+        "event_rate": 0.2326,
+        "roc_auc": 0.8434,
+        "pr_auc": 0.7372,
+        "brier": 0.1083
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "sector_rate",
+        "rows": 242,
+        "event_rate": 0.1488,
+        "roc_auc": 0.5,
+        "pr_auc": 0.1488,
+        "brier": 0.1424
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "past_decline",
+        "rows": 242,
+        "event_rate": 0.1488,
+        "roc_auc": 0.8453,
+        "pr_auc": 0.5389,
+        "brier": NaN
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "current_status",
+        "rows": 242,
+        "event_rate": 0.1488,
+        "roc_auc": 0.5,
+        "pr_auc": 0.1488,
+        "brier": NaN
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "logistic",
+        "rows": 242,
+        "event_rate": 0.1488,
+        "roc_auc": 0.9133,
+        "pr_auc": 0.8144,
+        "brier": 0.1139
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "lgbm",
+        "rows": 242,
+        "event_rate": 0.1488,
+        "roc_auc": 0.913,
+        "pr_auc": 0.7774,
+        "brier": 0.1254
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "ensemble",
+        "rows": 242,
+        "event_rate": 0.1488,
+        "roc_auc": 0.9159,
+        "pr_auc": 0.8001,
+        "brier": 0.1172
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "calibrated",
+        "rows": 242,
+        "event_rate": 0.1488,
+        "roc_auc": 0.9159,
+        "pr_auc": 0.8001,
+        "brier": 0.1041
+      }
+    ],
+    "3y": [
+      {
+        "frame": "전체",
+        "method": "sector_rate",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.4924,
+        "pr_auc": 0.4044,
+        "brier": 0.2438
+      },
+      {
+        "frame": "전체",
+        "method": "past_decline",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.6542,
+        "pr_auc": 0.6311,
+        "brier": NaN
+      },
+      {
+        "frame": "전체",
+        "method": "current_status",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7094,
+        "pr_auc": 0.6795,
+        "brier": NaN
+      },
+      {
+        "frame": "전체",
+        "method": "logistic",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7568,
+        "pr_auc": 0.7096,
+        "brier": 0.1988
+      },
+      {
+        "frame": "전체",
+        "method": "lgbm",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7819,
+        "pr_auc": 0.7401,
+        "brier": 0.1874
+      },
+      {
+        "frame": "전체",
+        "method": "ensemble",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7739,
+        "pr_auc": 0.7347,
+        "brier": 0.1869
+      },
+      {
+        "frame": "전체",
+        "method": "calibrated",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7424,
+        "pr_auc": 0.7169,
+        "brier": 0.1973
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "sector_rate",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.4924,
+        "pr_auc": 0.4044,
+        "brier": 0.2438
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "past_decline",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.6542,
+        "pr_auc": 0.6311,
+        "brier": NaN
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "current_status",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7094,
+        "pr_auc": 0.6795,
+        "brier": NaN
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "logistic",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7568,
+        "pr_auc": 0.7096,
+        "brier": 0.1988
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "lgbm",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7819,
+        "pr_auc": 0.7401,
+        "brier": 0.1874
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "ensemble",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7739,
+        "pr_auc": 0.7347,
+        "brier": 0.1869
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "calibrated",
+        "rows": 726,
+        "event_rate": 0.4091,
+        "roc_auc": 0.7424,
+        "pr_auc": 0.7169,
+        "brier": 0.1973
+      }
+    ]
+  },
+  "business_sector": {
+    "1y": [
+      {
+        "frame": "전체",
+        "method": "sector_rate",
+        "rows": 13744,
+        "event_rate": 0.4278,
+        "roc_auc": 0.5279,
+        "pr_auc": 0.4369,
+        "brier": 0.2505
+      },
+      {
+        "frame": "전체",
+        "method": "past_decline",
+        "rows": 13744,
+        "event_rate": 0.4278,
+        "roc_auc": 0.7066,
+        "pr_auc": 0.6805,
+        "brier": NaN
+      },
+      {
+        "frame": "전체",
+        "method": "current_status",
+        "rows": 13744,
+        "event_rate": 0.4278,
+        "roc_auc": 0.7071,
+        "pr_auc": 0.6711,
+        "brier": NaN
+      },
+      {
+        "frame": "전체",
+        "method": "logistic",
+        "rows": 13744,
+        "event_rate": 0.4278,
+        "roc_auc": 0.8091,
+        "pr_auc": 0.7916,
+        "brier": 0.1714
+      },
+      {
+        "frame": "전체",
+        "method": "lgbm",
+        "rows": 13744,
+        "event_rate": 0.4278,
+        "roc_auc": 0.8149,
+        "pr_auc": 0.8031,
+        "brier": 0.1681
+      },
+      {
+        "frame": "전체",
+        "method": "ensemble",
+        "rows": 13744,
+        "event_rate": 0.4278,
+        "roc_auc": 0.8142,
+        "pr_auc": 0.8013,
+        "brier": 0.1684
+      },
+      {
+        "frame": "전체",
+        "method": "calibrated",
+        "rows": 13744,
+        "event_rate": 0.4278,
+        "roc_auc": 0.8118,
+        "pr_auc": 0.7992,
+        "brier": 0.1686
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "sector_rate",
+        "rows": 11475,
+        "event_rate": 0.4224,
+        "roc_auc": 0.5596,
+        "pr_auc": 0.4721,
+        "brier": 0.2422
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "past_decline",
+        "rows": 11475,
+        "event_rate": 0.4224,
+        "roc_auc": 0.6982,
+        "pr_auc": 0.6686,
+        "brier": NaN
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "current_status",
+        "rows": 11475,
+        "event_rate": 0.4224,
+        "roc_auc": 0.7661,
+        "pr_auc": 0.7216,
+        "brier": NaN
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "logistic",
+        "rows": 11475,
+        "event_rate": 0.4224,
+        "roc_auc": 0.8103,
+        "pr_auc": 0.793,
+        "brier": 0.1701
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "lgbm",
+        "rows": 11475,
+        "event_rate": 0.4224,
+        "roc_auc": 0.814,
+        "pr_auc": 0.7977,
+        "brier": 0.1682
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "ensemble",
+        "rows": 11475,
+        "event_rate": 0.4224,
+        "roc_auc": 0.8142,
+        "pr_auc": 0.7981,
+        "brier": 0.1679
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "calibrated",
+        "rows": 11475,
+        "event_rate": 0.4224,
+        "roc_auc": 0.8118,
+        "pr_auc": 0.7962,
+        "brier": 0.1681
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "sector_rate",
+        "rows": 2269,
+        "event_rate": 0.4553,
+        "roc_auc": 0.373,
+        "pr_auc": 0.3819,
+        "brier": 0.2926
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "past_decline",
+        "rows": 2269,
+        "event_rate": 0.4553,
+        "roc_auc": 0.7474,
+        "pr_auc": 0.7367,
+        "brier": NaN
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "current_status",
+        "rows": 2269,
+        "event_rate": 0.4553,
+        "roc_auc": 0.5,
+        "pr_auc": 0.4553,
+        "brier": NaN
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "logistic",
+        "rows": 2269,
+        "event_rate": 0.4553,
+        "roc_auc": 0.8066,
+        "pr_auc": 0.8007,
+        "brier": 0.1779
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "lgbm",
+        "rows": 2269,
+        "event_rate": 0.4553,
+        "roc_auc": 0.83,
+        "pr_auc": 0.8336,
+        "brier": 0.1674
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "ensemble",
+        "rows": 2269,
+        "event_rate": 0.4553,
+        "roc_auc": 0.8213,
+        "pr_auc": 0.8234,
+        "brier": 0.1709
+      },
+      {
+        "frame": "2020년 이후 조사기준",
+        "method": "calibrated",
+        "rows": 2269,
+        "event_rate": 0.4553,
+        "roc_auc": 0.8213,
+        "pr_auc": 0.8234,
+        "brier": 0.1711
+      }
+    ],
+    "3y": [
+      {
+        "frame": "전체",
+        "method": "sector_rate",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.5406,
+        "pr_auc": 0.7167,
+        "brier": 0.2193
+      },
+      {
+        "frame": "전체",
+        "method": "past_decline",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.6462,
+        "pr_auc": 0.8266,
+        "brier": NaN
+      },
+      {
+        "frame": "전체",
+        "method": "current_status",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.6709,
+        "pr_auc": 0.8186,
+        "brier": NaN
+      },
+      {
+        "frame": "전체",
+        "method": "logistic",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.7537,
+        "pr_auc": 0.8706,
+        "brier": 0.1864
+      },
+      {
+        "frame": "전체",
+        "method": "lgbm",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.7591,
+        "pr_auc": 0.8741,
+        "brier": 0.1864
+      },
+      {
+        "frame": "전체",
+        "method": "ensemble",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.7601,
+        "pr_auc": 0.8746,
+        "brier": 0.1841
+      },
+      {
+        "frame": "전체",
+        "method": "calibrated",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.7536,
+        "pr_auc": 0.8712,
+        "brier": 0.1774
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "sector_rate",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.5406,
+        "pr_auc": 0.7167,
+        "brier": 0.2193
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "past_decline",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.6462,
+        "pr_auc": 0.8266,
+        "brier": NaN
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "current_status",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.6709,
+        "pr_auc": 0.8186,
+        "brier": NaN
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "logistic",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.7537,
+        "pr_auc": 0.8706,
+        "brier": 0.1864
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "lgbm",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.7591,
+        "pr_auc": 0.8741,
+        "brier": 0.1864
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "ensemble",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.7601,
+        "pr_auc": 0.8746,
+        "brier": 0.1841
+      },
+      {
+        "frame": "2019년까지 조사기준",
+        "method": "calibrated",
+        "rows": 4967,
+        "event_rate": 0.6891,
+        "roc_auc": 0.7536,
+        "pr_auc": 0.8712,
+        "brier": 0.1774
+      }
+    ]
+  }
+}

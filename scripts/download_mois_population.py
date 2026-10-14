@@ -20,10 +20,10 @@ ROOT = Path(__file__).resolve().parents[1]
 ENDPOINT = "https://jumin.mois.go.kr/downloadCsvAge.do"
 
 
-def download_year(year: int, output_dir: Path) -> tuple[Path, bool]:
+def download_year(year: int, output_dir: Path, force: bool = False) -> tuple[Path, bool]:
     output_dir.mkdir(parents=True, exist_ok=True)
     target = output_dir / f"mois_resident_age_{year}.csv"
-    if target.exists():
+    if target.exists() and not force:
         return target, False
 
     # xlsStats=3 is the site's "all eup/myeon/dong" CSV selection.
@@ -35,6 +35,7 @@ def download_year(year: int, output_dir: Path) -> tuple[Path, bool]:
             "sltOrgLvl1": "5200000000",
             "sltOrgLvl2": "A",
             "sum": "sum",
+            "gender": "gender",  # adds 남/여 columns; 지방소멸위험지수 needs women aged 20-39
             "sltUndefType": "",
             "searchYearStart": str(year),
             "searchMonthStart": "12",
@@ -75,6 +76,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--start", type=int, default=2008)
     parser.add_argument("--end", type=int, default=2025)
+    parser.add_argument("--force", action="store_true", help="re-download files that already exist")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "data" / "raw" / "mois")
     arguments = parser.parse_args()
     if arguments.start > arguments.end:
@@ -82,7 +84,7 @@ def main() -> None:
     failures = []
     for year in range(arguments.start, arguments.end + 1):
         try:
-            path, downloaded = download_year(year, arguments.output_dir)
+            path, downloaded = download_year(year, arguments.output_dir, arguments.force)
             print(f"{year}: {'downloaded' if downloaded else 'already present'} {path}", flush=True)
         except Exception as exc:
             failures.append(year)

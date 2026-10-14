@@ -43,4 +43,4 @@ snapshot = build_dashboard_snapshot(
     selected_region=controls["selected_region"],
     weights=controls["weights"],
 )
-render_dashboard(snapshot)
+render_dashboard(snapshot, controls["map_mode"])

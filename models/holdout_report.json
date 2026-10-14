@@ -1,0 +1,486 @@
+{
+  "youth": {
+    "random": {
+      "label": "무작위",
+      "train_rows": 1582,
+      "test_rows": 808,
+      "scores": [
+        {
+          "method": "lgbm",
+          "weighted_mae_pp": 7.604623589097894,
+          "mae_pp": 7.404511724128017,
+          "median_ae_pp": 4.893356346569532,
+          "province_origin_abs_error_pct": 1.7612830352716113
+        },
+        {
+          "method": "hamilton_perry",
+          "weighted_mae_pp": 11.022449433672527,
+          "mae_pp": 10.23731957642176,
+          "median_ae_pp": 6.542293198242672,
+          "province_origin_abs_error_pct": 2.6925064176976545
+        },
+        {
+          "method": "trend_3y",
+          "weighted_mae_pp": 11.320476246998341,
+          "mae_pp": 11.44754421679543,
+          "median_ae_pp": 7.38287128809127,
+          "province_origin_abs_error_pct": 2.725388911798069
+        }
+      ]
+    },
+    "temporal": {
+      "label": "학습 2013~2019 / 검증 2020, 2021, 2022",
+      "train_rows": 1670,
+      "test_rows": 720,
+      "scores": [
+        {
+          "method": "lgbm",
+          "weighted_mae_pp": 8.190287624586201,
+          "mae_pp": 10.335867107377494,
+          "median_ae_pp": 6.138656905749933,
+          "province_origin_abs_error_pct": 2.4057796118950723
+        },
+        {
+          "method": "hamilton_perry",
+          "weighted_mae_pp": 10.65568732508441,
+          "mae_pp": 11.163077463930565,
+          "median_ae_pp": 6.348845562090888,
+          "province_origin_abs_error_pct": 0.6484577066296163
+        },
+        {
+          "method": "trend_3y",
+          "weighted_mae_pp": 12.015033866304668,
+          "mae_pp": 12.828617697999984,
+          "median_ae_pp": 7.168853628475858,
+          "province_origin_abs_error_pct": 1.9785956066870132
+        }
+      ]
+    },
+    "temporal_embargo": {
+      "label": "학습 2013~2017 / 검증 2020, 2021, 2022",
+      "train_rows": 1190,
+      "test_rows": 720,
+      "scores": [
+        {
+          "method": "lgbm",
+          "weighted_mae_pp": 8.096662395363108,
+          "mae_pp": 9.771107163695092,
+          "median_ae_pp": 5.9356334372993995,
+          "province_origin_abs_error_pct": 1.5104086464651223
+        },
+        {
+          "method": "hamilton_perry",
+          "weighted_mae_pp": 10.65568732508441,
+          "mae_pp": 11.163077463930565,
+          "median_ae_pp": 6.348845562090888,
+          "province_origin_abs_error_pct": 0.6484577066296163
+        },
+        {
+          "method": "trend_3y",
+          "weighted_mae_pp": 12.015033866304668,
+          "mae_pp": 12.828617697999984,
+          "median_ae_pp": 7.168853628475858,
+          "province_origin_abs_error_pct": 1.9785956066870132
+        }
+      ]
+    }
+  },
+  "business": {
+    "total_1y": {
+      "random": {
+        "label": "무작위",
+        "train_rows": 1771,
+        "test_rows": 891,
+        "event_rate": 0.25252525252525254,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.889582916249583,
+            "pr_auc": 0.7948011054958547,
+            "brier": 0.10315789937342783
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.8936336336336337,
+            "pr_auc": 0.7843322853188895,
+            "brier": 0.10531614974214557
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.8742142142142142,
+            "pr_auc": 0.7880841193950368,
+            "brier": 0.10548442018201083
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.7348281614948282,
+            "pr_auc": 0.5809821769358008,
+            "brier": null
+          }
+        ]
+      },
+      "temporal": {
+        "label": "학습 2009~2015 / 검증 2016, 2017, 2018, 2023",
+        "train_rows": 1694,
+        "test_rows": 968,
+        "event_rate": 0.2396694214876033,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.9007507964767616,
+            "pr_auc": 0.7898573670855247,
+            "brier": 0.10863649429338768
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.899960176161919,
+            "pr_auc": 0.7825763206411012,
+            "brier": 0.10876963143452087
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.8978401424287856,
+            "pr_auc": 0.7844828885178685,
+            "brier": 0.11404387235011458
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.8081486600449775,
+            "pr_auc": 0.6495279515805249,
+            "brier": null
+          }
+        ]
+      },
+      "temporal_embargo": {
+        "label": "학습 2009~2015 / 검증 2016, 2017, 2018, 2023",
+        "train_rows": 1694,
+        "test_rows": 968,
+        "event_rate": 0.2396694214876033,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.9007507964767616,
+            "pr_auc": 0.7898573670855247,
+            "brier": 0.10863649429338768
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.899960176161919,
+            "pr_auc": 0.7825763206411012,
+            "brier": 0.10876963143452087
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.8978401424287856,
+            "pr_auc": 0.7844828885178685,
+            "brier": 0.11404387235011458
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.8081486600449775,
+            "pr_auc": 0.6495279515805249,
+            "brier": null
+          }
+        ],
+        "small_town_roc_auc": {
+          "under_200": 0.8535500747384155,
+          "200_or_more": 0.9191381230854917
+        }
+      }
+    },
+    "total_3y": {
+      "random": {
+        "label": "무작위",
+        "train_rows": 1280,
+        "test_rows": 656,
+        "event_rate": 0.4070121951219512,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.8280812223794807,
+            "pr_auc": 0.7818809261517576,
+            "brier": 0.16474367278163046
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.8355622310158575,
+            "pr_auc": 0.7747730355098339,
+            "brier": 0.16375314085536555
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.8013248221214484,
+            "pr_auc": 0.7654221004835606,
+            "brier": 0.1731326304705004
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.6589064440657405,
+            "pr_auc": 0.6079923953193215,
+            "brier": null
+          }
+        ]
+      },
+      "temporal": {
+        "label": "학습 2009~2013 / 검증 2014, 2015, 2016",
+        "train_rows": 1210,
+        "test_rows": 726,
+        "event_rate": 0.4090909090909091,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.7955467652437349,
+            "pr_auc": 0.7493182931986668,
+            "brier": 0.17737773894635045
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.8120599938781756,
+            "pr_auc": 0.7628882385115416,
+            "brier": 0.17413603295607513
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.7721582570067419,
+            "pr_auc": 0.7195228216044953,
+            "brier": 0.189838445392098
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.7094409518651943,
+            "pr_auc": 0.679539849311378,
+            "brier": null
+          }
+        ]
+      },
+      "temporal_embargo": {
+        "label": "학습 2009~2011 / 검증 2014, 2015, 2016",
+        "train_rows": 726,
+        "test_rows": 726,
+        "event_rate": 0.4090909090909091,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.7785390815693847,
+            "pr_auc": 0.7300620911019453,
+            "brier": 0.1855455356767442
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.7829342374796919,
+            "pr_auc": 0.7295698676046617,
+            "brier": 0.18834880932045017
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.7636583394159151,
+            "pr_auc": 0.7156106195659823,
+            "brier": 0.19976346140523993
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.7094409518651943,
+            "pr_auc": 0.679539849311378,
+            "brier": null
+          }
+        ]
+      }
+    },
+    "sector_1y": {
+      "random": {
+        "label": "무작위",
+        "train_rows": 12242,
+        "test_rows": 6121,
+        "event_rate": 0.42117301094592385,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.838867798850299,
+            "pr_auc": 0.8178163409470687,
+            "brier": 0.15762395698246112
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.8398724131127999,
+            "pr_auc": 0.8190053402355745,
+            "brier": 0.15725366445589692
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.8309250399666998,
+            "pr_auc": 0.8087338963117161,
+            "brier": 0.1610712450667697
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.6903128734048082,
+            "pr_auc": 0.6416674115775727,
+            "brier": null
+          }
+        ]
+      },
+      "temporal": {
+        "label": "학습 2009~2016 / 검증 2017, 2018, 2023",
+        "train_rows": 12752,
+        "test_rows": 5611,
+        "event_rate": 0.45357333808590267,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.8313170497900159,
+            "pr_auc": 0.8322637444396633,
+            "brier": 0.16688818059654542
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.832263099819684,
+            "pr_auc": 0.8352140863760907,
+            "brier": 0.16605662310430988
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.8254642783452967,
+            "pr_auc": 0.8197510359452904,
+            "brier": 0.1706031835070032
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.6576142161253984,
+            "pr_auc": 0.6457795431209792,
+            "brier": null
+          }
+        ]
+      },
+      "temporal_embargo": {
+        "label": "학습 2009~2016 / 검증 2017, 2018, 2023",
+        "train_rows": 12752,
+        "test_rows": 5611,
+        "event_rate": 0.45357333808590267,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.8313170497900159,
+            "pr_auc": 0.8322637444396633,
+            "brier": 0.16688818059654542
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.832263099819684,
+            "pr_auc": 0.8352140863760907,
+            "brier": 0.16605662310430988
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.8254642783452967,
+            "pr_auc": 0.8197510359452904,
+            "brier": 0.1706031835070032
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.6576142161253984,
+            "pr_auc": 0.6457795431209792,
+            "brier": null
+          }
+        ]
+      }
+    },
+    "sector_3y": {
+      "random": {
+        "label": "무작위",
+        "train_rows": 8481,
+        "test_rows": 4271,
+        "event_rate": 0.6377897447904473,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.8070772192306268,
+            "pr_auc": 0.8784554698558684,
+            "brier": 0.16881889830829166
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.8141493127240731,
+            "pr_auc": 0.8820760858819565,
+            "brier": 0.1653750028919678
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.7896912407796056,
+            "pr_auc": 0.8687098893738004,
+            "brier": 0.17621051820224717
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.6528094972316272,
+            "pr_auc": 0.7660125798838591,
+            "brier": null
+          }
+        ]
+      },
+      "temporal": {
+        "label": "학습 2009~2013 / 검증 2014, 2015, 2016",
+        "train_rows": 7785,
+        "test_rows": 4967,
+        "event_rate": 0.6891483793034024,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.7703361820903702,
+            "pr_auc": 0.8788260766731969,
+            "brier": 0.1751871060169877
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.7754214101801438,
+            "pr_auc": 0.8808133903960691,
+            "brier": 0.17319516646895214
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.7574783656429608,
+            "pr_auc": 0.8722457342253126,
+            "brier": 0.18085349040756776
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.6709104745556953,
+            "pr_auc": 0.818586207200459,
+            "brier": null
+          }
+        ]
+      },
+      "temporal_embargo": {
+        "label": "학습 2009~2011 / 검증 2014, 2015, 2016",
+        "train_rows": 4619,
+        "test_rows": 4967,
+        "event_rate": 0.6891483793034024,
+        "scores": [
+          {
+            "method": "ensemble",
+            "roc_auc": 0.7631036012103433,
+            "pr_auc": 0.8752392999563601,
+            "brier": 0.18740107388166322
+          },
+          {
+            "method": "lgbm",
+            "roc_auc": 0.7619289808806322,
+            "pr_auc": 0.8750327132159096,
+            "brier": 0.1905486399950541
+          },
+          {
+            "method": "logistic",
+            "roc_auc": 0.7560861529519147,
+            "pr_auc": 0.8705043142208084,
+            "brier": 0.18945981852061736
+          },
+          {
+            "method": "current_status",
+            "roc_auc": 0.6709104745556953,
+            "pr_auc": 0.818586207200459,
+            "brier": null
+          }
+        ]
+      }
+    }
+  }
+}

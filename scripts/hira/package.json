@@ -1,0 +1,8 @@
+{
+  "name": "jb-hira-download",
+  "private": true,
+  "description": "HIRA 병의원·약국 현황 ZIP 다운로드 (공개 페이지의 다운로드 링크를 헤드리스 브라우저로 누름)",
+  "dependencies": {
+    "playwright-core": "1.48.2"
+  }
+}

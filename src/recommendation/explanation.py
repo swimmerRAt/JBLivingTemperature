@@ -2,31 +2,20 @@ from __future__ import annotations
 
 import pandas as pd
 
+# Components are percentile ranks among Jeonbuk towns; 75 means the top quarter.
+STRENGTH_THRESHOLD = 75
+STRENGTHS = (
+    ("transport_component", "대중교통(정류장 밀도·경유 노선)"),
+    ("medical_component", "의료기관 수"),
+    ("business_component", "사업체 수"),
+    ("vacancy_component", "주거 안정성(시군 빈집 비율)"),
+    ("youth_component", "청년 기반(20~39세 비율·5년 변화)"),
+    ("stability_component", "미래 안정성(3년 청년 예측·사업체 위험)"),
+)
+
 
 def generate_reason(row: pd.Series) -> str:
-    strengths: list[str] = []
-
-    transport = row.get("transport_component", row.get("transport_score", 0))
-    medical = row.get("medical_component", row.get("medical_score", 0))
-    vacancy = row.get("vacancy_component", 0)
-    youth = row.get("youth_component", row.get("youth_score", 0))
-    stability = row.get("stability_component", row.get("infrastructure_stability", 0))
-
-    if transport >= 75:
-        strengths.append("대중교통 접근성이 좋고")
-    if medical >= 75:
-        strengths.append("의료시설 접근성이 안정적이며")
-    if vacancy >= 75:
-        strengths.append("주거 공실 부담이 낮고")
-    if youth >= 75:
-        strengths.append("청년 인구 기반이 두텁고")
-    if stability >= 75:
-        strengths.append("인구 안정성 신호가 양호합니다")
-
+    strengths = [label for column, label in STRENGTHS if (row.get(column) or 0) >= STRENGTH_THRESHOLD]
     if not strengths:
-        return "기본 점수 대비 균형 있는 생활권으로 보입니다."
-
-    explanation = " ".join(strengths)
-    if not explanation.endswith("."):
-        explanation = explanation + "."
-    return explanation
+        return "상위 25%에 드는 항목은 없지만 항목별 점수가 고르게 분포한 지역입니다."
+    return f"{', '.join(strengths)} 항목이 전북 읍면동 상위 25%에 듭니다."

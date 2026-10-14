@@ -1,14 +1,16 @@
 {
   "model_name": "jeonbuk_living_temperature",
-  "description": "Explainable regional livability score built from population, housing, healthcare, and transport indicators",
-  "version": "0.2.0",
-  "status": "baseline",
-  "sources": [
-    "population_projection",
-    "population_structure",
-    "vacant_housing",
-    "healthcare_facilities",
-    "transport_access_time"
-  ],
-  "notes": "Score components are normalized to 0-100 and combined with user-adjustable weights. Future replacement candidates: RandomForest, LightGBM, Time-Series panel model."
+  "description": "Town-level living score plus 3-year youth population and business decline forecasts for Jeonbuk",
+  "version": "0.3.0",
+  "status": "forecasting",
+  "unit": "242 eup/myeon/dong (SGIS 2024 boundaries)",
+  "models": {
+    "youth_net_migration": "Cohort residual estimate of 20-39 net migration, validated against KOSIS city migration",
+    "youth_forecast": "LightGBM panel regression of 3-year log youth change, chosen over Hamilton-Perry and trend baselines by population-weighted rolling-origin backtest; size-stratified conformal 80% intervals; SHAP drivers",
+    "business_decline": "LightGBM classifiers (1 and 3 years) for a 10%+ drop in establishments by town and KSIC section, Platt-calibrated on out-of-time backtest scores"
+  },
+  "training": "scripts/train_models.py",
+  "report": "docs/model_report.md",
+  "metrics": "models/model_report.json",
+  "notes": "Forecast inputs exclude bus data (no history) and use city-level medical counts only. SHAP shows predictive contribution, not causal effect."
 }

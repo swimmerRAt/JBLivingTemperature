@@ -3,47 +3,55 @@ from __future__ import annotations
 import folium
 import pandas as pd
 
+GRADE_COLORS = {"A": "#1f7a5c", "B": "#2d9d78", "C": "#efb34d", "D": "#e58a4e", "E": "#d96161"}
+STAGE_COLORS = {"안정": "#2d9d78", "주의": "#efb34d", "위험": "#d96161"}
+MISSING_COLOR = "#8b9bad"
+LEGENDS = {
+    "grade": ("생활 점수 상대 등급", [("A 상위 20%", "A"), ("B", "B"), ("C", "C"), ("D", "D"), ("E 하위 20%", "E")], GRADE_COLORS),
+    "risk": ("3년 감소 위험 (예측)", [("안정", "안정"), ("주의", "주의"), ("위험", "위험")], STAGE_COLORS),
+}
 
-def _risk_grade(stability: float) -> str:
-    if stability >= 70:
-        return "안정"
-    if stability >= 40:
-        return "주의"
-    return "위험"
+
+def _count(value: object) -> str:
+    return "데이터 없음" if value is None or pd.isna(value) else f"{float(value):,.0f}"
 
 
-def create_folium_map(df: pd.DataFrame) -> folium.Map:
-    center_lat = df["lat"].mean()
-    center_lon = df["lon"].mean()
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=9, tiles="CartoDB positron")
+def _percent(value: object) -> str:
+    return "데이터 없음" if value is None or pd.isna(value) else f"{float(value):+.1f}%"
 
-    for _, row in df.iterrows():
-        temp = row.get("living_score", row.get("no_car_temperature", row.get("overall_score", 50)))
-        color = "#2d9d78" if temp >= 70 else "#efb34d" if temp >= 50 else "#d96161"
-        risk_grade = row.get("risk_grade", _risk_grade(float(row.get("infrastructure_stability", 50))))
-        district = row.get("district", "")
+
+def create_folium_map(df: pd.DataFrame, color_by: str = "grade") -> folium.Map:
+    located = df.dropna(subset=["lat", "lon"])
+    m = folium.Map(location=[located["lat"].mean(), located["lon"].mean()], zoom_start=9, tiles="OpenStreetMap")
+    title, items, colors = LEGENDS[color_by]
+
+    for _, row in located.iterrows():
+        grade = row.get("living_grade") or "C"
+        stage = row.get("forecast_stage") if isinstance(row.get("forecast_stage"), str) else None
+        color = colors.get(grade if color_by == "grade" else stage, MISSING_COLOR)
         folium.CircleMarker(
             location=[row["lat"], row["lon"]],
-            radius=10,
+            radius=6,
             color=color,
             fill=True,
             fill_color=color,
-            fill_opacity=0.8,
+            fill_opacity=0.85,
+            weight=1,
+            tooltip=row.get("region_name", row.get("city")),
             popup=(
-                f"{row['city']} {district}<br>"
-                f"생활 온도: {float(temp):.1f}<br>"
-                f"인구: {float(row.get('population', 0)):,.0f}<br>"
-                f"청년 비율: {float(row.get('youth_ratio', 0)):.1f}%<br>"
-                f"위험 등급: {risk_grade}"
+                f"{row.get('region_name', row.get('city'))}<br>"
+                f"생활 점수: {float(row.get('living_score', 0)):.1f} ({grade}등급)<br>"
+                f"3년 감소 위험: {stage or '데이터 없음'}<br>"
+                f"3년 후 청년 인구: {_percent(row.get('youth_forecast_change_3y'))}<br>"
+                f"인구: {_count(row.get('population'))} · 버스 정류장: {_count(row.get('bus_stop_count'))}"
+                f" · 의료기관: {_count(row.get('hospital_count'))}"
             ),
         ).add_to(m)
 
-    legend_html = """
+    rows = "".join(f'<span style="color:{colors[key]};">●</span> {label}<br>' for label, key in items)
+    legend_html = f"""
     <div style="position: fixed; bottom: 30px; left: 30px; z-index: 9999; background: white; border: 1px solid #ccc; padding: 10px; font-size: 12px;">
-      <b>생활 온도</b><br>
-      <span style="color:#2d9d78;">●</span> 70~100 안정<br>
-      <span style="color:#efb34d;">●</span> 50~69 관찰<br>
-      <span style="color:#d96161;">●</span> 0~49 위험
+      <b>{title}</b><br>{rows}
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))

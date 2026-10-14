@@ -247,6 +247,164 @@ def load_tago(connection: sqlite3.Connection, files: dict) -> None:
                 connection.executemany("INSERT INTO tago_route_stop VALUES (?,?,?,?,?,?,?,?,?,?)", rows)
 
 
+SGIS_CITY_CODES = {
+    "35011": "전주시", "35012": "전주시", "35020": "군산시", "35030": "익산시",
+    "35040": "정읍시", "35050": "남원시", "35060": "김제시", "35510": "완주군",
+    "35520": "진안군", "35530": "무주군", "35540": "장수군", "35550": "임실군",
+    "35560": "순창군", "35570": "고창군", "35580": "부안군",
+}
+# Establishment survey years through 2005 are classified with KSIC 8, where D is
+# manufacturing; the SGIS responses switch to the KSIC 9+ lettering in 2006.
+KSIC8_LAST_YEAR = 2005
+
+
+def sgis_industry_names(files: dict) -> dict[str, dict[str, str]]:
+    names = {}
+    for path, _ in files.get("sgis_api_industry_codes", []):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        names[data["ksic_revision"]] = {item["class_code"]: item["class_nm"] for item in data["items"]}
+    if 8 not in names or 10 not in names:
+        raise ValueError("SGIS industry code lists for KSIC 8 and 10 are required")
+    return {"KSIC8": names[8], "KSIC9+": names[10]}
+
+
+def load_sgis_business(connection: sqlite3.Connection, files: dict) -> None:
+    entries = files.get("sgis_api_company", [])
+    if not entries:
+        return
+    industry_names = sgis_industry_names(files)
+    for path, source_id in entries:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        year = int(data["year"])
+        basis = "KSIC8" if year <= KSIC8_LAST_YEAR else "KSIC9+"
+        batch = []
+        for query in data["queries"]:
+            code = query["class_code"] or "ALL"
+            name = "전체 산업" if code == "ALL" else industry_names[basis].get(code)
+            if name is None:
+                if query["records"]:
+                    raise ValueError(f"Unknown {basis} section {code} in {path}")
+                continue
+            for record in query["records"]:
+                town_code = str(record["adm_cd"])
+                city = SGIS_CITY_CODES.get(town_code[:5])
+                if city is None or len(town_code) != 8:
+                    raise ValueError(f"Unexpected SGIS town code {town_code} in {path}")
+                workers = record["tot_worker"]
+                batch.append((year, town_code, record["adm_nm"], city, code, basis, name,
+                              int(record["corp_cnt"]), None if workers in ("N/A", "", None) else int(workers),
+                              source_id))
+        connection.executemany("INSERT INTO sgis_business_town VALUES (?,?,?,?,?,?,?,?,?,?)", batch)
+
+
+def sgis_age_range(group: str) -> tuple[int | None, int | None]:
+    if group == "total":
+        return None, None
+    if group.endswith("+"):
+        return int(group[:-1]), None
+    start, end = group.split("-")
+    return int(start), int(end)
+
+
+def load_sgis_population(connection: sqlite3.Connection, files: dict) -> None:
+    for path, source_id in files.get("sgis_api_population", []):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        year = int(data["year"])
+        batch = []
+        for query in data["queries"]:
+            start, end = sgis_age_range(query["age_group"])
+            for record in query["records"]:
+                town_code = str(record["adm_cd"])
+                city = SGIS_CITY_CODES.get(town_code[:5])
+                if city is None or len(town_code) != 8:
+                    raise ValueError(f"Unexpected SGIS town code {town_code} in {path}")
+                value = record["population"]
+                batch.append((year, town_code, record["adm_nm"], city, query["age_group"], start, end,
+                              None if value in ("N/A", "", None) else int(value), source_id))
+        connection.executemany("INSERT INTO sgis_population_town VALUES (?,?,?,?,?,?,?,?,?)", batch)
+        mismatched = connection.execute("""
+            SELECT COUNT(*) FROM (
+                SELECT town_code, SUM(CASE WHEN age_group = 'total' THEN population END) AS total,
+                       SUM(CASE WHEN age_group IN ('0-14', '15-64', '65+') THEN population END) AS parts
+                FROM sgis_population_town WHERE year = ? GROUP BY town_code
+            ) WHERE total IS NOT parts
+        """, (year,)).fetchone()[0]
+        if mismatched:
+            raise ValueError(f"SGIS population {year}: broad age groups do not sum to total in {mismatched} towns")
+
+
+def town_boundary(files: dict) -> tuple[dict, int] | None:
+    for path, source_id in files.get("sgis_api_boundary", []):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if data["level"] == "town":
+            if data.get("crs") != "EPSG:5179":
+                raise ValueError("SGIS town boundary must be UTM-K (EPSG:5179)")
+            return data, source_id
+    return None
+
+
+def assign_towns(boundary: dict, longitudes: list[float], latitudes: list[float]) -> list[tuple]:
+    """Return (city, town_code, town_name, match_method) for each WGS84 point."""
+    from pyproj import Transformer
+    from shapely import STRtree, points
+    from shapely.geometry import shape
+
+    towns = [(str(f["properties"]["adm_cd"]), f["properties"]["adm_nm"].split()[-1], shape(f["geometry"]))
+             for f in boundary["features"]]
+    if any(code[:5] not in SGIS_CITY_CODES for code, _, _ in towns):
+        raise ValueError("SGIS town boundary contains a code outside Jeonbuk")
+    tree = STRtree([geometry for _, _, geometry in towns])
+    xs, ys = Transformer.from_crs("EPSG:4326", "EPSG:5179", always_xy=True).transform(longitudes, latitudes)
+    geometries = points(xs, ys)
+    within_point, within_town = tree.query(geometries, predicate="within")
+    match = dict(zip(within_point.tolist(), within_town.tolist()))
+    # Points on a road along the edge can sit just outside a simplified polygon.
+    rest = [i for i in range(len(geometries)) if i not in match]
+    if rest:
+        near_point, near_town = tree.query_nearest(geometries[rest], max_distance=100)
+        for position, town_index in zip(near_point.tolist(), near_town.tolist()):
+            match.setdefault(rest[position], town_index)
+    result = []
+    for index, geometry in enumerate(geometries):
+        town_index = match.get(index)
+        if town_index is None:
+            result.append((None, None, None, "outside_jeonbuk"))
+            continue
+        code, name, polygon = towns[town_index]
+        method = "within" if polygon.covers(geometry) else "nearest_100m"
+        result.append((SGIS_CITY_CODES[code[:5]], code, name, method))
+    return result
+
+
+def load_tago_stop_admin(connection: sqlite3.Connection, files: dict) -> None:
+    boundary = town_boundary(files)
+    if boundary is None:
+        return
+    data, source_id = boundary
+    stops = connection.execute("SELECT city_name, stop_id, longitude, latitude FROM tago_stop").fetchall()
+    towns = assign_towns(data, [s[2] for s in stops], [s[3] for s in stops])
+    connection.executemany("INSERT INTO tago_stop_admin VALUES (?,?,?,?,?,?,?,?)", [
+        (feed_city, stop_id, *town[:3], data["year"], town[3], source_id)
+        for (feed_city, stop_id, _, _), town in zip(stops, towns)
+    ])
+
+
+def load_medical_facility_admin(connection: sqlite3.Connection, files: dict) -> None:
+    boundary = town_boundary(files)
+    if boundary is None:
+        return
+    data, source_id = boundary
+    facilities = connection.execute(
+        "SELECT snapshot_period, facility_kind, encrypted_facility_id, longitude, latitude "
+        "FROM medical_facility_snapshot WHERE longitude IS NOT NULL AND latitude IS NOT NULL"
+    ).fetchall()
+    towns = assign_towns(data, [f[3] for f in facilities], [f[4] for f in facilities])
+    connection.executemany("INSERT INTO medical_facility_admin VALUES (?,?,?,?,?,?,?,?,?)", [
+        (*facility[:3], *town[:3], data["year"], town[3], source_id)
+        for facility, town in zip(facilities, towns)
+    ])
+
+
 def load_all(connection: sqlite3.Connection, files: dict) -> None:
     load_historical_population(connection, files)
     load_migration(connection, files)
@@ -255,3 +413,7 @@ def load_all(connection: sqlite3.Connection, files: dict) -> None:
     load_medical_quarterly(connection, files)
     load_transport_api(connection, files)
     load_tago(connection, files)
+    load_sgis_business(connection, files)
+    load_sgis_population(connection, files)
+    load_tago_stop_admin(connection, files)
+    load_medical_facility_admin(connection, files)

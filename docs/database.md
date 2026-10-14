@@ -7,14 +7,18 @@
 | 자료 | 범위 | 주요 테이블·뷰 | 해석 시 주의 |
 | --- | --- | --- | --- |
 | 주민등록 인구 | KOSIS 2001~2007, 행안부 2008~2025, 전북 시군·읍면동과 5세 연령대 | `historical_population_age`, `area_year`, `population_age`, `city_population_series`, `population_age_series` | 행정구역 코드가 연도별로 달라질 수 있다. 시군 시계열 뷰는 14개 시군×25년이다. |
+| 등록센서스 인구 (현재 경계) | SGIS 2015~2024, 전북 읍면동 242곳, 5세 연령대·0~14/15~64/65+ | `sgis_population_town` | 현재 읍면동 경계로 재집계돼 있어 2018년 분동·2023년 여의동→혁신동 편입 같은 경계 조정의 영향이 없다. 외국인을 포함한 등록센서스라 주민등록과 수준이 다르다(전북 합계 ±2%). 100세 이상 칸은 소수라 대부분 비공개(NULL)다. 2000~2014년 읍면동 값은 API에서 제공되지 않는다. |
 | 전입·전출·순이동 | KOSIS 2001~2025, 전북 시군, 연간 성별·5세 연령대 | `migration_annual_count`, `city_age20_39_net_migration` | `20~39세` 뷰는 네 5세 계층의 순이동 **인원**을 합산한다. `청년층(19~34세)` 등 별도 공표 계층도 원본에 있다. |
 | 이동률 | KOSIS 2001~2025, 시군·연령대 | `migration_annual_rate` | 이동률(%)은 이동자 수(명)와 구분하고, 서로 다른 연령대의 비율을 더하지 않는다. |
-| 사업체·종사자 | 2020 경제총조사, 전북 읍면동·산업대분류 | `business_2020` | `X`와 `-`는 결측으로 저장했다. 한 해만 있어 연간 증감률은 만들 수 없다. |
+| 사업체·종사자 (연도별) | SGIS 전국사업체조사 2000~2024, 전북 읍면동 242곳·산업대분류 | `sgis_business_town`, `sgis_business_city_annual` | 2005년까지는 KSIC 8차(D=제조업), 2006년부터 9차 이후(C=제조업)다. 2019→2020년 사업체 수가 53% 뛰는 조사기준 단절이 있다. 소규모 종사자 수는 `N/A`로 비공개라 NULL이다. |
+| 사업체·종사자 (2020 경제총조사) | 2020, 전북 읍면동·산업대분류 | `business_2020` | `X`와 `-`는 결측으로 저장했다. SGIS 전국사업체조사와 조사 기준이 달라 섞어 쓰지 않는다. |
 | 빈집 | 2015~2025, 전북 14개 시군 | `vacant_housing` | 기존 2021~2025 CSV와 새 API 응답의 중복 값은 빌드 때 일치 여부를 확인한다. |
 | 주택 유형 | 2015~2025 | `housing_type_area_annual`, `province_housing_observation` | 읍면동은 2015·2020·2025년에만 제공된다. 그 외 연도는 시군 단위다. |
 | 병의원·약국 | HIRA 개별시설 공개 ZIP, 2023.12·2024.12 및 2025.3~2026.6 분기 | `medical_facility_snapshot`, `medical_city_snapshot_counts` | 공개 스냅샷을 월별 연속 이력으로 해석할 수 없다. |
+| 의료기관 행정구역 | HIRA 시설 좌표 × SGIS 2024 읍면동 경계 | `medical_facility_admin` | 정류장과 같은 방식으로 좌표를 읍면동 경계에 넣었다. 2026.6 스냅샷 3,921곳은 모두 경계 안에 들어간다. |
 | 의료기관 집계 | KOSIS HIRA 분기 표, 전북 시군구·기관종별 2009~2026; 기존 시도 CSV도 보존 | `medical_city_quarterly`, `medical_city_quarterly_totals`, `province_medical_summary` | 전주시는 완산구·덕진구를 합산한다. HIRA 시설 ZIP과 집계 기준이 다르므로 직접 대조하지 않는다. |
-| 버스 정류장·노선 | TAGO 현재 스냅샷, 전북 13개 시군 | `tago_stop`, `tago_stop_city_counts`, `tago_route`, `tago_route_stop` | TAGO 도시코드 목록에 **완주군이 없다**. 노선별 경유 정류소는 별도 다수 호출이 필요하다. 기존 전국 CSV는 `bus_stop`으로 보존한다. |
+| 버스 정류장·노선 | TAGO 현재 스냅샷, 13개 시군 피드 | `tago_stop`, `tago_stop_city_counts`, `tago_route`, `tago_route_stop` | TAGO 도시코드 목록에 완주군이 없다. `tago_stop.city_name`은 조회한 **피드**이며, 전주·임실·익산 피드에는 완주군 정류장이 섞여 있다. 기존 전국 CSV는 `bus_stop`으로 보존한다. |
+| 정류장 행정구역 | TAGO 정류장 × SGIS 2024 읍면동 경계 | `tago_stop_admin`, `tago_stop_admin_city_counts` | 좌표를 UTM-K로 바꿔 읍면동 경계에 넣었다. 경계 밖 100m 이내는 가장 가까운 읍면동(`nearest_100m`), 그보다 먼 정류장은 `outside_jeonbuk`이다. 시군별 정류장 비교는 이 표를 쓴다. 수치는 방향별 승강장 ID 수라 물리적 정류장 수보다 크다. |
 | 대중교통 접근·이용 | KOSIS API, 전북 시도 2014~2024; 기존 2020~2024 CSV도 보존 | `province_transport_api`, `province_transport_observation` | 시군별 비교 자료가 아니다. 2018년 전후 통계표와 일부 항목 구간이 달라진다. |
 
 모든 원본 파일은 `source_file`에서 경로·출처·SHA-256으로 추적하고, 엑셀 항목과의 연결은 `catalog_source_file`에 저장한다. API 원문은 `api_record`에도 보존한다. `data_issue`에는 남은 품질·범위 문제가 기록된다.
@@ -28,7 +32,7 @@
 
 ## 다시 수집하고 빌드하기
 
-루트 `.env`에 `KOSIS_API_KEY`와 `DATA_GO_KR_API_KEY`를 넣는다. 키 값은 출력하거나 Git에 넣지 않는다. 다운로드 스크립트는 이미 받은 JSON을 다시 요청하지 않으며, 필요하면 `--force`로 갱신한다.
+루트 `.env`에 `KOSIS_API_KEY`, `DATA_GO_KR_API_KEY`, `SGIS_CONSUMER_KEY`(서비스 ID), `SGIS_CONSUMER_SECRET`(보안 키)을 넣는다. 키 값은 출력하거나 Git에 넣지 않는다. 다운로드 스크립트는 이미 받은 JSON을 다시 요청하지 않으며, 필요하면 `--force`로 갱신한다.
 
 ```bash
 .venv/bin/python scripts/download_kosis_api.py --table registered_population --start 2001 --end 2007
@@ -43,6 +47,7 @@
 .venv/bin/python scripts/download_tago_api.py --dataset stops
 .venv/bin/python scripts/download_tago_api.py --dataset routes
 .venv/bin/python scripts/download_tago_api.py --dataset route_stops
+.venv/bin/python scripts/download_sgis_api.py --start 2000 --end 2024 --population-start 2015 --population-end 2024
 .venv/bin/python scripts/build_living_database.py
 ```
 
@@ -50,8 +55,8 @@
 
 ## 남은 원천 범위
 
-1. **읍면동 사업체 연속연도**: KOSIS 온라인간행물의 전국사업체조사 파일을 연도별로 확보하고, 2020 경제총조사와 산업분류·조사기준이 비교 가능한지 확인해야 한다. 현재 `business_2020`만으로 사업체 증감률을 만들지 않는다.
-2. **완주군 정류장·노선**: TAGO 도시코드 목록에 없으므로 완주군 또는 전주·완주 교통정보시스템의 별도 공개 원본이 필요하다. 13개 시군 자료로 14개 시군 순위를 만들지 않는다.
+1. **사업체 시계열 단절**: SGIS로 2000~2024년 읍면동 사업체 수를 확보했다. 다만 2019→2020년 조사기준 변경과 2005→2006년 산업분류 변경 구간은 증감률을 만들지 않는다. 2025년 자료는 SGIS 공표 후 `--start 2025 --end 2025`로 추가한다.
+2. **완주군 자체 노선**: 인접 시군 피드에 포함된 완주군 정류장은 `tago_stop_admin`으로 분리했다. 전주 노선이 다니지 않는 완주군 농어촌버스·수요응답형(행복콜) 버스는 TAGO에 없을 수 있어 완주군 원본이 필요하다.
 3. **실시간 운행 이력**: 버스 도착·위치 API는 현재 상태만 응답한다. 저장 주기와 대상 노선·정류장을 정한 뒤 새 이력을 축적해야 한다.
 4. **기간·해상도 차이**: 의료시설 개별 목록은 월별 연속 공개본이 아니다. 대중교통 접근·이용 지표는 2014~2024년을 확보했지만 전북 시도 단위이며, 시기별 항목 정의가 일부 다르다.
 

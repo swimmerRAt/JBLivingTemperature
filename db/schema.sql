@@ -165,6 +165,18 @@ CREATE TABLE population_age (
     FOREIGN KEY (year, admin_code) REFERENCES area_year(year, admin_code)
 );
 
+-- Women by five-year band, for 지방소멸위험지수 (women 20-39 / everyone 65+).
+CREATE TABLE population_age_female (
+    year INTEGER NOT NULL,
+    admin_code TEXT NOT NULL,
+    age_start INTEGER NOT NULL,
+    age_end INTEGER,
+    population INTEGER NOT NULL CHECK (population >= 0),
+    source_file_id INTEGER NOT NULL REFERENCES source_file(id),
+    PRIMARY KEY (year, admin_code, age_start),
+    FOREIGN KEY (year, admin_code) REFERENCES area_year(year, admin_code)
+);
+
 CREATE TABLE vacant_housing (
     year INTEGER NOT NULL,
     city_name TEXT NOT NULL,
@@ -281,6 +293,69 @@ CREATE TABLE bus_stop (
     source_file_id INTEGER NOT NULL REFERENCES source_file(id)
 );
 
+-- SGIS national establishment survey by eup/myeon/dong. Each year uses its own
+-- KSIC revision: section letters before 2007 (KSIC 8) name different industries.
+CREATE TABLE sgis_business_town (
+    year INTEGER NOT NULL CHECK (year BETWEEN 2000 AND 2100),
+    town_code TEXT NOT NULL CHECK (length(town_code) = 8),
+    town_name TEXT NOT NULL,
+    city_name TEXT NOT NULL,
+    industry_code TEXT NOT NULL,
+    ksic_basis TEXT NOT NULL CHECK (ksic_basis IN ('KSIC8', 'KSIC9+')),
+    industry_name TEXT NOT NULL,
+    establishment_count INTEGER NOT NULL CHECK (establishment_count >= 0),
+    employee_count INTEGER CHECK (employee_count >= 0),
+    source_file_id INTEGER NOT NULL REFERENCES source_file(id),
+    PRIMARY KEY (year, town_code, industry_code)
+);
+
+-- SGIS register-based census population re-aggregated on current town
+-- boundaries. It counts residents (foreigners included), so its levels differ
+-- from resident registration; use it for boundary-consistent change.
+CREATE TABLE sgis_population_town (
+    year INTEGER NOT NULL CHECK (year BETWEEN 2000 AND 2100),
+    town_code TEXT NOT NULL CHECK (length(town_code) = 8),
+    town_name TEXT NOT NULL,
+    city_name TEXT NOT NULL,
+    age_group TEXT NOT NULL,
+    age_start INTEGER,
+    age_end INTEGER,
+    population INTEGER CHECK (population >= 0),
+    source_file_id INTEGER NOT NULL REFERENCES source_file(id),
+    PRIMARY KEY (year, town_code, age_group)
+);
+
+-- TAGO files are keyed by the city code used to query them; Jeonju's feed also
+-- serves Wanju. This table places each stop in the SGIS boundary it falls in.
+CREATE TABLE tago_stop_admin (
+    feed_city_name TEXT NOT NULL,
+    stop_id TEXT NOT NULL,
+    admin_city_name TEXT,
+    town_code TEXT,
+    town_name TEXT,
+    boundary_year INTEGER NOT NULL,
+    match_method TEXT NOT NULL CHECK (match_method IN ('within', 'nearest_100m', 'outside_jeonbuk')),
+    boundary_source_file_id INTEGER NOT NULL REFERENCES source_file(id),
+    PRIMARY KEY (feed_city_name, stop_id),
+    FOREIGN KEY (feed_city_name, stop_id) REFERENCES tago_stop(city_name, stop_id)
+);
+
+-- HIRA coordinates placed in the same SGIS town boundary as the TAGO stops.
+CREATE TABLE medical_facility_admin (
+    snapshot_period TEXT NOT NULL,
+    facility_kind TEXT NOT NULL,
+    encrypted_facility_id TEXT NOT NULL,
+    admin_city_name TEXT,
+    town_code TEXT,
+    town_name TEXT,
+    boundary_year INTEGER NOT NULL,
+    match_method TEXT NOT NULL CHECK (match_method IN ('within', 'nearest_100m', 'outside_jeonbuk')),
+    boundary_source_file_id INTEGER NOT NULL REFERENCES source_file(id),
+    PRIMARY KEY (snapshot_period, facility_kind, encrypted_facility_id),
+    FOREIGN KEY (snapshot_period, facility_kind, encrypted_facility_id)
+        REFERENCES medical_facility_snapshot(snapshot_period, facility_kind, encrypted_facility_id)
+);
+
 CREATE TABLE data_issue (
     issue_key TEXT PRIMARY KEY,
     severity TEXT NOT NULL CHECK (severity IN ('info', 'warning', 'blocker')),
@@ -301,6 +376,9 @@ CREATE INDEX migration_rate_area ON migration_annual_rate(area_name, year, age_c
 CREATE INDEX business_city ON business_2020(city_name, industry_code);
 CREATE INDEX housing_area_city ON housing_type_area_annual(city_name, year, housing_type_code);
 CREATE INDEX tago_route_stop_lookup ON tago_route_stop(city_name, route_id, stop_order);
+CREATE INDEX sgis_business_city ON sgis_business_town(city_name, year, industry_code);
+CREATE INDEX tago_stop_admin_city ON tago_stop_admin(admin_city_name, town_code);
+CREATE INDEX medical_facility_admin_town ON medical_facility_admin(snapshot_period, town_code);
 
 CREATE VIEW city_year_population AS
 SELECT year, admin_code, name AS city_name, population_total, source_file_id
@@ -352,3 +430,17 @@ FROM bus_stop GROUP BY city_name;
 CREATE VIEW tago_stop_city_counts AS
 SELECT city_name, COUNT(*) AS observed_stop_count
 FROM tago_stop GROUP BY city_name;
+
+-- A stop listed in two city feeds is counted once per administrative city.
+CREATE VIEW tago_stop_admin_city_counts AS
+SELECT admin_city_name AS city_name, COUNT(DISTINCT stop_id) AS observed_stop_count
+FROM tago_stop_admin WHERE admin_city_name IS NOT NULL
+GROUP BY admin_city_name;
+
+CREATE VIEW sgis_business_city_annual AS
+SELECT year, city_name, industry_code, ksic_basis, industry_name,
+       SUM(establishment_count) AS establishment_count,
+       SUM(employee_count) AS employee_count_known,
+       SUM(employee_count IS NULL) AS towns_with_suppressed_employees
+FROM sgis_business_town
+GROUP BY year, city_name, industry_code;

@@ -37,6 +37,7 @@ CITY_NAMES = {
 MOIS_DOWNLOAD_URL = "https://jumin.mois.go.kr/ageStatMonth.do"
 BUS_STOP_URL = "https://www.data.go.kr/data/15067528/fileData.do"
 HIRA_URL = "https://opendata.hira.or.kr/op/opc/selectOpenData.do?sno=11925"
+SGIS_URL = "https://sgis.kostat.go.kr/developer/html/openApi/api/data.html"
 
 
 def nfc(value: object) -> str:
@@ -69,6 +70,10 @@ def source_family(path: Path) -> str:
         if name.startswith("route_stops_"):
             return "tago_api_route_stops"
         return "tago_api_" + name.split("_", 1)[0]
+    if path.parent.name == "sgis" and path.suffix == ".json":
+        if name.startswith("industry_codes_"):
+            return "sgis_api_industry_codes"
+        return "sgis_api_" + name.split("_", 1)[0]
     if name.startswith("mois_resident_age_"):
         return "mois_resident_age"
     if name.startswith("전국_버스정류장_"):
@@ -100,6 +105,8 @@ def file_provenance(family: str) -> tuple[str | None, str | None]:
     if family.startswith("tago_api_"):
         page = "15098529" if family in {"tago_api_routes", "tago_api_route_stops"} else "15098534"
         return f"https://www.data.go.kr/data/{page}/openapi.do", "국토교통부"
+    if family.startswith("sgis_api_"):
+        return SGIS_URL, "국가데이터처 SGIS"
     if family == "mois_resident_age":
         return MOIS_DOWNLOAD_URL, "행정안전부"
     if family == "bus_stop_national":
@@ -153,19 +160,19 @@ CATALOG_STATUS = {
 }
 
 CATALOG_FILE_FAMILIES = {
-    **{row: ("mois_resident_age", "kosis_api_registered_population") for row in range(5, 10)},
+    **{row: ("mois_resident_age", "kosis_api_registered_population", "sgis_api_population") for row in range(5, 10)},
     **{row: ("kosis_migration_sex", "kosis_api_migration_sex") for row in range(10, 13)},
     13: ("kosis_migration_age", "kosis_api_migration_age", "kosis_api_migration_rate"),
-    14: ("kosis_api_business_town",),
-    15: ("kosis_api_business_town",),
-    16: ("kosis_api_business_town",),
+    14: ("kosis_api_business_town", "sgis_api_company", "sgis_api_industry_codes"),
+    15: ("kosis_api_business_town", "sgis_api_company", "sgis_api_industry_codes"),
+    16: ("kosis_api_business_town", "sgis_api_company"),
     17: ("kosis_vacant_housing", "kosis_api_vacant_housing"),
     18: ("kosis_vacant_housing", "kosis_api_vacant_housing"),
     19: ("kosis_housing_types", "kosis_api_housing_types"),
     20: ("hira_medical_zip",),
     21: ("hira_medical_zip", "kosis_medical_summary", "kosis_api_medical_city"),
     22: ("hira_medical_zip",),
-    23: ("bus_stop_national", "tago_api_stops"),
+    23: ("bus_stop_national", "tago_api_stops", "sgis_api_boundary"),
     24: ("bus_stop_national", "tago_api_stops"),
     25: ("tago_api_routes", "tago_api_route_stops"),
     27: ("kosis_transport_access_mode", "kosis_api_transport_access_old", "kosis_api_transport_access_new"),
@@ -210,6 +217,9 @@ def load_population(connection: sqlite3.Connection, files: dict[str, list[tuple[
                     age_columns.append((column, 100, None))
             if len(age_columns) != 21:
                 raise ValueError(f"{path}: expected 21 age bands, found {len(age_columns)}")
+            female_columns = [(column.replace("_계_", "_여_"), start, end) for column, start, end in age_columns]
+            if not set(name for name, _, _ in female_columns) <= set(reader.fieldnames or []):
+                raise ValueError(f"{path}: female age columns missing; re-download with download_mois_population.py --force")
             for row in reader:
                 full_name = nfc(row["행정구역"])
                 if not full_name.startswith(("전라북도 ", "전북특별자치도 ")):
@@ -246,6 +256,13 @@ def load_population(connection: sqlite3.Connection, files: dict[str, list[tuple[
                 connection.executemany(
                     "INSERT INTO population_age VALUES (?, ?, ?, ?, ?, ?)",
                     [(year, code, start, end, count, source_id) for start, end, count in ages],
+                )
+                women = [(start, end, integer(row[column])) for column, start, end in female_columns]
+                if any(count is None for _, _, count in women) or sum(c for _, _, c in women) != integer(row[f"{year}년_여_총인구수"]):
+                    raise ValueError(f"{path}: female age bands do not sum to total at {full_name}")
+                connection.executemany(
+                    "INSERT INTO population_age_female VALUES (?, ?, ?, ?, ?, ?)",
+                    [(year, code, start, end, count, source_id) for start, end, count in women],
                 )
         print(f"population {year}: imported", flush=True)
 
@@ -525,15 +542,51 @@ def build_database(destination: Path = DATABASE_PATH) -> None:
                                "WHERE workbook_row=21",
                                (f"KOSIS 전북 시군구·기관종별 분기 집계 {medical_periods}개 분기 적재; "
                                 "월별 시군 시계열과 HIRA 시설 스냅샷은 기준이 다름",))
+        census_years = connection.execute("SELECT MIN(year), MAX(year) FROM sgis_population_town").fetchone()
+        if census_years[0] is not None:
+            connection.execute("INSERT INTO data_issue VALUES (?, ?, ?)",
+                               ("population_census_vs_registration", "info",
+                                f"sgis_population_town({census_years[0]}~{census_years[1]}년)은 등록센서스 인구라 "
+                                "주민등록 인구와 개념이 다름(전북 합계 차이 약 ±2%); 현재 읍면동 경계 기준이므로 "
+                                "경계 조정 지역의 연도 간 변화 비교에 사용하고 수준값을 주민등록과 섞지 말 것"))
         if connection.execute("SELECT COUNT(*) FROM historical_population_age").fetchone()[0] == 0:
             connection.execute(
                 "INSERT INTO data_issue VALUES (?, ?, ?)",
                 ("population_2001_2007_gap", "warning", "2001~2007년 주민등록 인구 행은 아직 정규화되지 않음"),
             )
-        connection.execute(
-            "INSERT INTO data_issue VALUES (?, ?, ?)",
-            ("business_data_gap", "blocker", "읍면동별 연속연도 사업체수·종사자수 지표는 없음; 단년도 경제총조사와 취업자 통계로 연간 증감률을 만들 수 없음"),
-        )
+        sgis_years = [row[0] for row in connection.execute(
+            "SELECT DISTINCT year FROM sgis_business_town ORDER BY year")]
+        if sgis_years:
+            span = f"{sgis_years[0]}~{sgis_years[-1]}년"
+            connection.execute("UPDATE catalog_item SET acquisition_status='ready', status_note=? "
+                               "WHERE workbook_row IN (14,15)",
+                               (f"SGIS 전국사업체조사 전북 읍면동 산업대분류별 사업체·종사자 수 {span} 적재; "
+                                "2005년까지는 KSIC 8차 분류, 소규모 종사자 수는 비공개(N/A)로 결측; "
+                                "2020년 경제총조사(business_2020)도 별도 보존",))
+            connection.execute("UPDATE catalog_item SET acquisition_status='derived', status_note=? "
+                               "WHERE workbook_row=16",
+                               (f"sgis_business_town {span}에서 직접 계산; 2019→2020년 조사기준 변경 구간과 "
+                                "2005→2006년 산업분류 변경 구간은 증감률을 만들지 말 것",))
+            totals = dict((year, (firms, workers)) for year, firms, workers in connection.execute(
+                "SELECT year, SUM(establishment_count), SUM(employee_count) FROM sgis_business_town "
+                "WHERE industry_code='ALL' AND year IN (2019, 2020) GROUP BY year"))
+            if len(totals) == 2:
+                (firms_2019, workers_2019), (firms_2020, workers_2020) = totals[2019], totals[2020]
+                connection.execute("INSERT INTO data_issue VALUES (?, ?, ?)",
+                                   ("business_series_break", "warning",
+                                    f"SGIS 전북 사업체 수가 2019년 {firms_2019:,}개에서 2020년 {firms_2020:,}개로 "
+                                    f"{firms_2020 / firms_2019 - 1:.0%} 늘었으나 종사자 수는 "
+                                    f"{workers_2020 / workers_2019 - 1:.0%} 증가; 2020년부터 조사 대상 기준이 "
+                                    "바뀐 단절로 보고 2019→2020 증감률은 산출하지 말 것"))
+            connection.execute("INSERT INTO data_issue VALUES (?, ?, ?)",
+                               ("business_ksic_break", "warning",
+                                "SGIS 산업 대분류 문자는 2005년까지 KSIC 8차(D=제조업), 2006년부터 9차 이후"
+                                "(C=제조업)를 따름; 업종별 시계열은 industry_name 기준으로 연결 여부를 검토할 것"))
+        else:
+            connection.execute(
+                "INSERT INTO data_issue VALUES (?, ?, ?)",
+                ("business_data_gap", "blocker", "읍면동별 연속연도 사업체수·종사자수 지표는 없음; 단년도 경제총조사와 취업자 통계로 연간 증감률을 만들 수 없음"),
+            )
         if connection.execute("SELECT COUNT(*) FROM province_transport_api").fetchone()[0]:
             connection.execute("INSERT INTO data_issue VALUES (?, ?, ?)",
                                ("transport_category_break", "warning",
@@ -587,7 +640,32 @@ def build_database(destination: Path = DATABASE_PATH) -> None:
                 state = "partial"
             connection.execute("UPDATE catalog_item SET acquisition_status=?, status_note=? "
                                "WHERE workbook_row=?", (state, note, workbook_row))
-        if missing_tago:
+        admin_counts = dict(connection.execute("SELECT city_name, observed_stop_count FROM tago_stop_admin_city_counts"))
+        if admin_counts:
+            outside = connection.execute("SELECT COUNT(*) FROM tago_stop_admin "
+                                         "WHERE match_method='outside_jeonbuk'").fetchone()[0]
+            covered = sorted(CITY_NAMES & admin_counts.keys())
+            wanju_feeds = ", ".join(f"{feed} {count:,}" for feed, count in connection.execute(
+                "SELECT feed_city_name, COUNT(*) FROM tago_stop_admin WHERE admin_city_name='완주군' "
+                "GROUP BY feed_city_name ORDER BY COUNT(*) DESC"))
+            connection.execute("UPDATE catalog_item SET acquisition_status='partial', status_note=? "
+                               "WHERE workbook_row=23",
+                               (f"TAGO 현재 정류장을 SGIS 경계로 재배정해 {len(covered)}개 시군 확보"
+                                f"(tago_stop_admin); 완주군 정류장 ID {admin_counts.get('완주군', 0):,}개는 "
+                                f"인접 시군 피드에서 확인({wanju_feeds}); "
+                                f"전북 경계 밖 정류장 {outside:,}개는 시군 집계에서 제외",))
+        if missing_tago and admin_counts.get("완주군"):
+            connection.execute("INSERT INTO data_issue VALUES (?, ?, ?)",
+                               ("tago_city_gap", "warning",
+                                f"TAGO 도시코드 목록에 완주군이 없지만 인접 시군 피드({wanju_feeds})에 완주군 "
+                                f"정류장 ID {admin_counts['완주군']:,}개가 포함됨; 시군 비교는 tago_stop_admin 기준으로 하고, "
+                                "인접 시군 노선이 다니지 않는 완주 농어촌·수요응답 버스는 별도 원본 필요"))
+        if admin_counts:
+            connection.execute("INSERT INTO data_issue VALUES (?, ?, ?)",
+                               ("tago_stop_id_semantics", "info",
+                                "정류장 수는 서로 다른 TAGO 정류장 ID(방향별 승강장) 수다; 시군 피드마다 같은 "
+                                "정류장을 다른 ID로 수록한 경우도 있어 물리적 정류장 수보다 클 수 있음"))
+        elif missing_tago:
             connection.execute("INSERT INTO data_issue VALUES (?, ?, ?)",
                                ("tago_city_gap", "warning", "TAGO 정류장 API 도시코드 미수록: " + ", ".join(missing_tago)))
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
