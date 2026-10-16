@@ -1,6 +1,6 @@
 # 예측 모델 결과 보고서
 
-생성: 2026-10-16 20:59 · 실행 시간 0.7분 · 재실행: `.venv/bin/python scripts/train_models.py`
+생성: 2026-10-17 00:10 · 실행 시간 0.4분 · 재실행: `.venv/bin/python scripts/train_models.py`
 
 ## 요약
 
