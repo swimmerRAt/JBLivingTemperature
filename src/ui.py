@@ -97,11 +97,51 @@ def inject_styles() -> None:
           --red: #d96161;
         }
         .stApp { background: var(--canvas); color: var(--ink); }
+        /* Keep native Streamlit text readable on the fixed light canvas,
+           including when a browser session previously selected dark mode. */
+        [data-testid="stMain"] {
+          --text-color: #0d1b2a;
+          --background-color: #f4f7fb;
+          --secondary-background-color: #ffffff;
+          color: var(--ink);
+          color-scheme: light;
+        }
+        [data-testid="stMain"] [data-testid="stMarkdownContainer"],
+        [data-testid="stMain"] [data-testid="stMarkdownContainer"] p,
+        [data-testid="stMain"] [data-testid="stHeading"] h1,
+        [data-testid="stMain"] [data-testid="stHeading"] h2,
+        [data-testid="stMain"] [data-testid="stHeading"] h3,
+        [data-testid="stMain"] [data-testid="stHeading"] h4,
+        [data-testid="stMain"] [data-testid="stMetricLabel"],
+        [data-testid="stMain"] [data-testid="stMetricValue"],
+        [data-testid="stMain"] [data-testid="stWidgetLabel"],
+        [data-testid="stMain"] [data-testid="stExpander"] summary {
+          color: var(--ink) !important;
+        }
+        [data-testid="stMain"] [data-testid="stCaptionContainer"],
+        [data-testid="stMain"] [data-testid="stCaptionContainer"] p {
+          color: #475569 !important;
+        }
+        [data-testid="stMain"] [data-baseweb="select"] > div,
+        [data-testid="stSidebar"] [data-baseweb="select"] > div {
+          background-color: #ffffff;
+          color: var(--ink);
+        }
         [data-testid="stHeader"] { background: transparent; }
         [data-testid="stSidebar"] { background: #11253a; }
         [data-testid="stSidebar"] * { color: #e8f0f8; }
         [data-testid="stSidebar"] label { color: #adc0d4 !important; }
         [data-testid="stSidebar"] [data-baseweb="select"] * { color: var(--ink) !important; }
+        [data-testid="stSidebar"] [data-testid="stSelectbox"] [role="group"] {
+          background: #ffffff;
+        }
+        [data-testid="stSidebar"] [role="combobox"],
+        [data-testid="stSidebar"] [data-testid="stSelectbox"] button,
+        [data-testid="stSidebar"] [data-testid="stSelectbox"] svg {
+          color: #0d1b2a !important;
+          -webkit-text-fill-color: #0d1b2a;
+        }
+
         .block-container { max-width: 1440px; padding-top: 2rem; padding-bottom: 3rem; }
         .dashboard-kicker { color: var(--blue); font-size: .78rem; font-weight: 700; letter-spacing: .05em; margin-bottom: .4rem; }
         .dashboard-title { color: var(--ink); font-size: 2.2rem; line-height: 1.08; font-weight: 750; margin: 0; }
@@ -110,7 +150,7 @@ def inject_styles() -> None:
         .status-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.05rem; min-height: 112px; }
         .status-label { color: var(--muted); font-size: .82rem; }
         .status-value { color: var(--ink); font-size: 1.65rem; font-weight: 750; margin-top: .35rem; }
-        .status-detail { color: #8b9bad; font-size: .75rem; margin-top: .25rem; }
+        .status-detail { color: #64748b; font-size: .75rem; margin-top: .25rem; }
         .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1.1rem 1.2rem; height: 100%; }
         .score-ring { background: var(--blue-soft); border: 1px solid #cfddff; border-radius: 50%; width: 148px; height: 148px; display: grid; place-items: center; margin: .5rem auto 1.1rem; }
         .score-number { color: var(--blue); font-size: 2.5rem; font-weight: 800; line-height: 1; }
