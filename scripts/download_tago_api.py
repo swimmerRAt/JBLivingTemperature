@@ -27,6 +27,7 @@ OPERATIONS = {
     "stops": "BusSttnInfoInqireService/getSttnNoList",
     "routes": "BusRouteInfoInqireService/getRouteNoList",
     "route_stops": "BusRouteInfoInqireService/getRouteAcctoThrghSttnList",
+    "route_info": "BusRouteInfoInqireService/getRouteInfoIem",
 }
 
 
@@ -113,12 +114,15 @@ def canonical_city(value: str) -> str | None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dataset", choices=["all", "city_codes", "stops", "routes", "route_stops"], default="all")
+    parser.add_argument("--dataset", choices=["all", "city_codes", "stops", "routes", "route_stops", "route_info"], default="all")
     parser.add_argument("--city", choices=sorted(CITY_NAMES), help="Limit collection to one city")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--history", action="store_true", help="Collect a fresh immutable timestamped run")
     args = parser.parse_args()
     key = read_key()
     directory = ROOT / "data" / "raw" / "tago"
+    if args.history:
+        directory = directory / "history" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     city_path = directory / "city_codes.json"
     if not city_path.exists() or args.force:
         body = fetch("city_codes", key)
@@ -143,7 +147,7 @@ def main() -> None:
     missing = sorted((CITY_NAMES if args.city is None else {args.city}) - chosen.keys())
     if missing:
         print(f"TAGO city-code coverage gap: {', '.join(missing)}", flush=True)
-    datasets = ("stops", "routes") if args.dataset == "all" else (() if args.dataset == "route_stops" else (args.dataset,))
+    datasets = ("stops", "routes") if args.dataset == "all" else (() if args.dataset in {"route_stops", "route_info"} else (args.dataset,))
     for dataset in datasets:
         for city, code in sorted(chosen.items()):
             target = directory / f"{dataset}_{city}.json"
@@ -155,17 +159,29 @@ def main() -> None:
                           "city_name": city, "city_code": code, "total_count": total, "items": records})
             print(f"{dataset} {city}: {total} records", flush=True)
             time.sleep(0.3)
-    if args.dataset in {"all", "route_stops"}:
+    if args.dataset in {"all", "route_stops", "route_info"}:
         for city, code in sorted(chosen.items()):
             routes_path = directory / f"routes_{city}.json"
             if not routes_path.exists():
-                raise SystemExit(f"Collect route list first: {routes_path}")
+                records, total = fetch_pages("routes", key, code)
+                save(routes_path, {"retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+                                   "city_name": city, "city_code": code, "total_count": total, "items": records})
             routes = json.loads(routes_path.read_text(encoding="utf-8"))["items"]
             for route in routes:
                 route_id = str(route.get("routeid", ""))
                 if not route_id:
                     raise SystemExit(f"Unexpected route ID for {city}; inspect {routes_path}")
                 route_hash = hashlib.sha256(route_id.encode("utf-8")).hexdigest()[:16]
+                if args.dataset in {"all", "route_info"}:
+                    info_path = directory / f"route_info_{city}_{route_hash}.json"
+                    if not info_path.exists() or args.force:
+                        records = items(fetch("route_info", key, cityCode=code, routeId=route_id))
+                        save(info_path, {"retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+                                         "city_name": city, "city_code": code, "route_id": route_id,
+                                         "items": records})
+                        time.sleep(0.05)
+                if args.dataset == "route_info":
+                    continue
                 target = directory / f"route_stops_{city}_{route_hash}.json"
                 if target.exists() and not args.force:
                     continue
@@ -176,6 +192,15 @@ def main() -> None:
                 if sum(1 for _ in directory.glob(f"route_stops_{city}_*.json")) % 50 == 0:
                     print(f"route stops {city}: 50 more routes saved", flush=True)
                 time.sleep(0.05)
+
+
+    if args.history:
+        save(directory / "manifest.json", {
+            "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+            "dataset": args.dataset, "cities": sorted(chosen), "missing_cities": missing,
+            "files": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                      for p in sorted(directory.glob("*.json")) if p.name != "manifest.json"},
+        })
 
 
 if __name__ == "__main__":

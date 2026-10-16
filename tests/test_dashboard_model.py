@@ -115,3 +115,8 @@ def test_forecasts_drive_future_stability_and_stages():
     assert scored.loc["다온시 다동", "forecast_stage"] == "주의"
     snapshot = build_dashboard_snapshot(regions, {"warnings": {}})
     assert FORECAST_NOTE in snapshot["notes"]
+
+
+def test_missing_risk_values_do_not_break_stage_selection():
+    assert worst_stage(None, float('nan')) is None
+    assert worst_stage(float('nan'), '주의') == '주의'

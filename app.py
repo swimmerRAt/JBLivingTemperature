@@ -5,6 +5,7 @@ from pathlib import Path
 import streamlit as st
 
 from src.dashboard_model import build_dashboard_snapshot
+from src.development import load_development_results
 from src.data_pipeline import load_dashboard_data
 from src.ui import inject_styles, render_dashboard, render_sidebar
 
@@ -36,11 +37,14 @@ if regions.empty:
     st.warning("표시할 지역 데이터가 없습니다.")
     st.stop()
 
-controls = render_sidebar(regions)
+development = load_development_results(DATA_DIR)
+controls = render_sidebar(regions, development.get("analysis"))
 snapshot = build_dashboard_snapshot(
     regions,
     quality,
     selected_region=controls["selected_region"],
     weights=controls["weights"],
 )
+snapshot["development"] = development
+snapshot["weights"] = controls["weights"]
 render_dashboard(snapshot, controls["map_mode"])
