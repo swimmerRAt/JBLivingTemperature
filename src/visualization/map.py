@@ -3,9 +3,10 @@ from __future__ import annotations
 import folium
 import pandas as pd
 
-GRADE_COLORS = {"A": "#1f7a5c", "B": "#2d9d78", "C": "#efb34d", "D": "#e58a4e", "E": "#d96161"}
-STAGE_COLORS = {"안정": "#2d9d78", "주의": "#efb34d", "위험": "#d96161"}
-MISSING_COLOR = "#8b9bad"
+# Living "temperature": warm orange for good living conditions, cool blue for poor ones.
+GRADE_COLORS = {"A": "#ff6f0f", "B": "#ff9b52", "C": "#f5c28f", "D": "#7fa8e6", "E": "#3c6fcf"}
+STAGE_COLORS = {"안정": "#00a05b", "주의": "#f5a300", "위험": "#f04438"}
+MISSING_COLOR = "#b0b3ba"
 LEGENDS = {
     "grade": ("생활 점수 상대 등급", [("A 상위 20%", "A"), ("B", "B"), ("C", "C"), ("D", "D"), ("E 하위 20%", "E")], GRADE_COLORS),
     "risk": ("3년 감소 위험 (예측)", [("안정", "안정"), ("주의", "주의"), ("위험", "위험")], STAGE_COLORS),
@@ -31,12 +32,12 @@ def create_folium_map(df: pd.DataFrame, color_by: str = "grade") -> folium.Map:
         color = colors.get(grade if color_by == "grade" else stage, MISSING_COLOR)
         folium.CircleMarker(
             location=[row["lat"], row["lon"]],
-            radius=6,
-            color=color,
+            radius=7,
+            color="#ffffff",
             fill=True,
             fill_color=color,
-            fill_opacity=0.85,
-            weight=1,
+            fill_opacity=0.92,
+            weight=1.5,
             tooltip=row.get("region_name", row.get("city")),
             popup=(
                 f"{row.get('region_name', row.get('city'))}<br>"
@@ -50,9 +51,14 @@ def create_folium_map(df: pd.DataFrame, color_by: str = "grade") -> folium.Map:
 
     rows = "".join(f'<span style="color:{colors[key]};">●</span> {label}<br>' for label, key in items)
     legend_html = f"""
-    <div style="position: fixed; bottom: 30px; left: 30px; z-index: 9999; background: white; border: 1px solid #ccc; padding: 10px; font-size: 12px;">
-      <b>{title}</b><br>{rows}
+    <div style="position: fixed; bottom: 24px; left: 24px; z-index: 9999; background: white; border-radius: 14px;
+                box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 12px 14px; font-size: 12px; line-height: 1.7; color: #212124;
+                font-family: Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;">
+      <b style="font-size: 13px;">{title}</b><br>{rows}
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))
+    # Muted base map so the coloured markers stand out.
+    m.get_root().header.add_child(folium.Element(
+        "<style>.leaflet-tile-pane{filter:grayscale(.9) brightness(1.06) contrast(.92);}</style>"))
     return m

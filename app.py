@@ -14,9 +14,9 @@ DATA_DIR = ROOT / "data"
 
 st.set_page_config(
     page_title="전북 생활권 인사이트",
-    page_icon="🧭",
+    page_icon=str(ROOT / "assets" / "favicon.png"),
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 
