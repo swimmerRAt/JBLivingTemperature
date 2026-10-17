@@ -4,6 +4,7 @@ import json
 import math
 import sqlite3
 import pandas as pd
+from src.facilities import LIVING, access_column
 from src.limitations import medical_history
 
 
@@ -70,7 +71,7 @@ def validate_accessibility(frame: pd.DataFrame, multiple: bool = False) -> None:
             raise ValueError('시간표 결과의 필수 열이 없습니다')
         if not frame.status.isin(['computed','unmapped_origin','unconfirmed_center']).all():
             raise ValueError('알 수 없는 계산 상태입니다')
-        numeric = required + ['accessible_pharmacy_30m']
+        numeric = required + ['accessible_pharmacy_30m'] + [access_column(c) for c in LIVING if access_column(c) in frame]
         valid = frame.status.eq('computed')
         if frame.loc[~valid,numeric].notna().any(axis=None):
             raise ValueError('위치 미연결 지역을 0개로 표시할 수 없습니다')

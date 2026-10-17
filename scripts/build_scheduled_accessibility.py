@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import load_npz
 from src.scheduled_accessibility import gtfs_seconds, scan_arrivals
+from src.facilities import FACILITY_CATEGORIES, access_column
 
 
 def main():
@@ -30,10 +31,13 @@ def main():
     origins=points[points.category.eq('origin')]
     if args.region:origins=origins[origins.region_code.eq(args.region)]
     if origins.empty:raise ValueError('No selected administrative center origin exists')
-    facilities=points[points.category.isin(['hospital','pharmacy']) & points.network_node.ge(0)]
+    facilities=points[points.category.isin(list(FACILITY_CATEGORIES)) & points.network_node.ge(0)]
     nodes=facilities.network_node.to_numpy(dtype=int)
     hospital_mask=facilities.category.eq('hospital').to_numpy()
     pharmacy_mask=facilities.category.eq('pharmacy').to_numpy()
+    # Everyday facilities present in this network (older networks only hold healthcare).
+    living={c:facilities.category.eq(c).to_numpy() for c in FACILITY_CATEGORIES
+            if c not in ('hospital','pharmacy') and facilities.category.eq(c).any()}
     rows=[]
     started=time.monotonic()
     for number,origin in enumerate(origins.itertuples(index=False),1):
@@ -41,12 +45,13 @@ def main():
             record={'region_code':origin.region_code,'departure_time':instant,
                 'travel_budget_minutes':30,'method':'ktdb_schedule_walk','status':'unmapped_origin',
                 'accessible_facilities_30m':None,'accessible_medical_30m':None,'accessible_pharmacy_30m':None,
-                'accessible_jobs_30m':None,'origin_connector_m':origin.connector_m,
+                'accessible_jobs_30m':None,**{access_column(c):None for c in living},
+                'origin_connector_m':origin.connector_m,
                 'origin_name':getattr(origin,'origin_name',None),
                 'origin_source_url':getattr(origin,'source_url',None),
                 'origin_lat':origin.lat,'origin_lon':origin.lon,
                 'origin_basis':manifest.get('origin_basis','polygon_representative_point'),
-                'mapped_facilities':len(facilities),'source_facilities':manifest['facility_records']}
+                'mapped_facilities':int((hospital_mask|pharmacy_mask).sum()),'source_facilities':manifest['facility_records']}
             if getattr(origin,'origin_status',None)=='center_unconfirmed':
                 record['status']='unconfirmed_center'
             if origin.network_node >= 0:
@@ -54,9 +59,12 @@ def main():
                 labels=scan_arrivals(walk,connections,int(origin.network_node),departure,
                                      boarding_margin_seconds=args.boarding_margin)
                 reached=np.isfinite(labels[nodes])
-                record.update(status='computed',accessible_facilities_30m=int(reached.sum()),
+                # accessible_facilities_30m keeps its healthcare-only meaning (hospital+pharmacy).
+                record.update(status='computed',
+                    accessible_facilities_30m=int((reached&(hospital_mask|pharmacy_mask)).sum()),
                     accessible_medical_30m=int((reached&hospital_mask).sum()),
-                    accessible_pharmacy_30m=int((reached&pharmacy_mask).sum()))
+                    accessible_pharmacy_30m=int((reached&pharmacy_mask).sum()),
+                    **{access_column(c):int((reached&mask).sum()) for c,mask in living.items()})
             rows.append(record)
         if number%10==0 or number==len(origins):
             print(f'{number}/{len(origins)} origins, {time.monotonic()-started:.1f}s',flush=True)
@@ -69,6 +77,7 @@ def main():
         default=frame[frame.departure_time.eq(args.departures[0])]
         default.to_csv(ROOT/'data/processed/accessibility_30m.csv',index=False)
         metadata={**manifest,'departures':args.departures,'boarding_margin_seconds':args.boarding_margin,
+            'living_categories':list(living),
             'result_rows':len(frame),'computed_origins':int(default.status.eq('computed').sum()),
             'unmapped_origins':int(default.status.ne('computed').sum()),
             'unconfirmed_centers':int(default.status.eq('unconfirmed_center').sum()),

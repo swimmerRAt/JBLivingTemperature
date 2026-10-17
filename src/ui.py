@@ -11,6 +11,7 @@ import plotly.express as px
 import streamlit as st
 
 from src.dashboard_model import DEFAULT_WEIGHTS, DRIVER_LABELS, has_forecast
+from src.facilities import FACILITY_CATEGORIES, LIVING, SOURCE_SUMMARY, access_column
 from src.visualization.map import GRADE_COLORS, MISSING_COLOR, create_folium_map
 from src.limitations import medical_changes, weight_sensitivity, component_evidence
 
@@ -35,6 +36,24 @@ def accessibility_rows(development: dict[str, Any], region_code: Any) -> pd.Data
     return frame[frame.region_code.astype(str).eq(str(region_code))]
 
 
+def available_categories(row: Any) -> list[str]:
+    """Facility categories computed for this result row (older results hold healthcare only)."""
+    return [c for c in FACILITY_CATEGORIES if access_column(c) in row and pd.notna(row.get(access_column(c)))]
+
+
+def build_facility_rows(row: Any, peers: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Per-category 30-minute counts with the Jeonbuk median at the same departure time."""
+    records = []
+    for category in available_categories(row):
+        label, group = FACILITY_CATEGORIES[category]
+        column = access_column(category)
+        median = None
+        if peers is not None and not peers.empty and column in peers:
+            median = pd.to_numeric(peers.loc[peers.status.eq("computed"), column], errors="coerce").median()
+        records.append([group, label, f"{int(row[column]):,}곳", "-" if median is None or pd.isna(median) else f"{median:,.0f}곳"])
+    return pd.DataFrame(records, columns=["분류", "시설", "30분 내", "전북 읍면동 중앙값"])
+
+
 def _access_card(rows: pd.DataFrame) -> tuple[str, str]:
     if rows.empty:
         return "계산 전", "KTDB 시간표·보행망 결과가 아직 생성되지 않았습니다"
@@ -46,6 +65,14 @@ def _access_card(rows: pd.DataFrame) -> tuple[str, str]:
     if row.get("status") == "unmapped_origin":
         return "계산 불가", "출발점이 보행망에 연결되지 않음"
     departure = f"평일 {str(row['departure_time'])[:5]} 출발 · " if "departure_time" in row else ""
+    categories = available_categories(row)
+    if any(c in LIVING for c in categories):
+        missing = [FACILITY_CATEGORIES[c][0] for c in categories if int(row[access_column(c)]) == 0]
+        reachable = len(categories) - len(missing)
+        absent = ("없음: " + ", ".join(missing[:3]) + (f" 외 {len(missing) - 3}종" if len(missing) > 3 else "")
+                  if missing else "모든 종류 이용 가능")
+        return (f"{reachable}/{len(categories)}종",
+                f"{departure}병의원·약국 {int(row.accessible_facilities_30m):,}곳 · {absent}")
     pharmacy = row.get("accessible_pharmacy_30m")
     parts = [f"병의원 {int(row.accessible_medical_30m)}"]
     if pharmacy is not None and pd.notna(pharmacy):
@@ -522,6 +549,18 @@ def _access_detail(snapshot: dict[str, object]) -> None:
         st.info("해당 읍면동의 행정복지센터 위치를 확인하지 못해 계산하지 않았습니다. 다른 대표점으로 대체하지 않습니다.")
     elif rows.iloc[0].get("status") == "unmapped_origin":
         st.info("출발점을 허용 거리 내 보행망에 연결하지 못해 계산하지 않았습니다. 시설이 0개라는 뜻이 아닙니다.")
+    elif any(c in LIVING for c in available_categories(rows.iloc[0])):
+        row = rows.iloc[0]
+        peers = development.get("accessibility_samples", development.get("accessibility", pd.DataFrame()))
+        if "departure_time" in peers and "departure_time" in row:
+            peers = peers[peers.departure_time.eq(row.departure_time)]
+        table = build_facility_rows(row, peers)
+        a, b = st.columns(2)
+        a.metric("30분 안에 갈 수 있는 시설 종류", f"{(table['30분 내'] != '0곳').sum()}/{len(table)}종")
+        b.metric("30분 내 병의원·약국", f"{int(row.accessible_facilities_30m):,}곳")
+        st.dataframe(table, hide_index=True, use_container_width=True, height=36 * (len(table) + 1) + 4)
+        st.caption(f"KTDB 2025년 3월 평일 시간표와 OSM 2026년 10월 보행망으로 계산한 추정입니다. 시설 자료: {SOURCE_SUMMARY}.")
+        st.caption(f"행정복지센터 출발 · 도보→버스→도보 및 도보 단독 경로 · 승차·환승 대기는 다음 출발 시각까지 반영 · 매 승차 여유 {metadata.get('boarding_margin_seconds',30)}초. 영업시간·실제 이용 가능 여부는 반영하지 않습니다.")
     else:
         row = rows.iloc[0]
         a, b, c = st.columns(3)

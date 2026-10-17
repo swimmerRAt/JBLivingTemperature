@@ -242,6 +242,8 @@ def main():
     parser.add_argument('--pbf',type=Path,default=ROOT/'data/raw/osm/south-korea-261015.osm.pbf')
     parser.add_argument('--gtfs',type=Path,default=ROOT/'data/raw/ktdb/202503/202503_GTFS_DataSet')
     parser.add_argument('--output',type=Path,default=ROOT/'data/processed/accessibility_network')
+    parser.add_argument('--facilities-csv',type=Path,default=ROOT/'data/processed/living_facilities.csv',
+                        help='Optional everyday facilities from scripts/download_living_facilities.py')
     parser.add_argument('--origins-csv',type=Path,default=ROOT/'data/raw/admin_centers/origins.csv',help='Verified administrative center locations; no polygon fallback')
     parser.add_argument('--walking-speed',type=float,default=80,help='Metres/minute; an assumption, not observation')
     parser.add_argument('--max-connector',type=float,default=100,help='Max estimated straight connector to a real road edge, metres')
@@ -253,6 +255,14 @@ def main():
         facilities=pd.read_sql_query('''SELECT encrypted_facility_id AS point_id, facility_kind AS category,
             longitude AS lon,latitude AS lat FROM medical_facility_snapshot
             WHERE snapshot_period='2025.3' ''',connection)
+    living=pd.DataFrame(columns=['point_id','category','lon','lat'])
+    if args.facilities_csv.exists():
+        living=pd.read_csv(args.facilities_csv,dtype={'facility_id':str})
+        living=living.rename(columns={'facility_id':'point_id'})[['point_id','category','lon','lat']]
+        facilities=pd.concat([facilities.assign(point_id=facilities.category+':'+facilities.point_id.astype(str)),
+                              living.assign(point_id=living.category+':'+living.point_id)],ignore_index=True)
+    else:
+        facilities['point_id']=facilities.category+':'+facilities.point_id
     # Neighbouring stops/roads are retained within a 5km bounding-box buffer.
     extent=units.to_crs(5179).geometry.buffer(5000).to_crs(4326).total_bounds
     bbox=tuple(float(v) for v in extent)
@@ -271,8 +281,7 @@ def main():
     origins['category']='origin'
     stop_points=stops.rename(columns={'stop_id':'point_id','stop_lat':'lat','stop_lon':'lon'})
     stop_points['category']='stop'
-    # Facility ID is namespaced to avoid collisions with stop/origin identifiers.
-    facilities['point_id']=facilities.category+':'+facilities.point_id
+    # Facility IDs are namespaced by category to avoid collisions with stop/origin identifiers.
     valid_facilities=facilities.dropna(subset=['lat','lon']).copy()
     valid_facilities=valid_facilities[valid_facilities.lat.between(-90,90)&valid_facilities.lon.between(-180,180)]
     points=pd.concat([origins,
@@ -291,11 +300,14 @@ def main():
     manifest={'method':'ktdb_schedule_walk','timetable_basis':'2025-03 representative weekday',
         'medical_basis':'2025.3','osm_basis':'2026-10-15','bounds_wgs84':bbox,
         'gtfs':gtfs_info,'walking':walk_info,'connections':connections,
-        'facility_records':len(facilities),'facility_invalid_coordinates':len(facilities)-len(valid_facilities),
+        'facility_records':int(facilities.category.isin(['hospital','pharmacy']).sum()),
+        'facility_category_records':{k:int(v) for k,v in facilities.category.value_counts().items()},'facility_invalid_coordinates':len(facilities)-len(valid_facilities),
         'origins':len(origins),'origin_basis':'administrative_center','confirmed_centers':int(confirmed.sum()),'jobs_available':False,
         'source_sha256':{str(args.origins_csv.relative_to(ROOT)):digest(args.origins_csv),
             str(database_path(ROOT/'data').relative_to(ROOT)):digest(database_path(ROOT/'data')),
             str(args.pbf.relative_to(ROOT)):digest(args.pbf),
+            **({str(args.facilities_csv.relative_to(ROOT)):digest(args.facilities_csv)} if args.facilities_csv.exists() else {}),
+            **{str(p.relative_to(ROOT)):digest(p) for p in sorted((ROOT/'data/raw/facilities').glob('*.json'))},
             **{str(p.relative_to(ROOT)):digest(p) for p in sorted(args.gtfs.glob('*.txt'))}},
         'notes':['KTDB route_type=0 is city/rural/village bus; other modes excluded.',
                  'calendar all-days flags are synthetic; do not interpret as weekend/current service.',

@@ -19,8 +19,9 @@ from reportlab.platypus import (Image, KeepTogether, Paragraph, SimpleDocTemplat
                                 TableStyle)
 
 from src.dashboard_model import DRIVER_LABELS
+from src.facilities import FACILITY_CATEGORIES, LIVING, SOURCE_SUMMARY, access_column
 from src.limitations import medical_changes, weight_sensitivity
-from src.ui import (accessibility_rows, build_forecast_rows, build_indicator_rows, build_status_cards,
+from src.ui import (accessibility_rows, available_categories, build_forecast_rows, build_indicator_rows, build_status_cards,
                     format_metric)
 from src.visualization.map import GRADE_COLORS, MISSING_COLOR
 
@@ -154,6 +155,23 @@ def _accessibility_frame(rows: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(records, columns=["출발 시각", "계산 상태", "병의원·약국 합계", "병의원", "약국"])
 
 
+def _facility_frame(rows: pd.DataFrame, peers: pd.DataFrame) -> pd.DataFrame:
+    """Rows = facility categories; columns = each departure time plus the Jeonbuk median (first departure)."""
+    rows = rows.sort_values("departure_time")
+    computed = rows[rows.status.eq("computed")]
+    first = rows.departure_time.iloc[0]
+    median_peers = peers[peers.departure_time.eq(first) & peers.status.eq("computed")] if not peers.empty else peers
+    records = []
+    for category in available_categories(computed.iloc[0]):
+        label, group = FACILITY_CATEGORIES[category]
+        column = access_column(category)
+        counts = [f"{int(value):,}" for value in computed[column]]
+        median = pd.to_numeric(median_peers[column], errors="coerce").median() if column in median_peers else None
+        records.append([group, label, *counts, "-" if median is None or pd.isna(median) else f"{median:,.0f}"])
+    times = [f"평일 {str(t)[:5]}" for t in computed.departure_time]
+    return pd.DataFrame(records, columns=["분류", "시설", *times, "전북 중앙값"])
+
+
 def _medical_frame(changes: pd.DataFrame) -> pd.DataFrame:
     kinds = {"hospital": "병의원", "pharmacy": "약국"}
     return pd.DataFrame(
@@ -228,13 +246,22 @@ def build_report_pdf(snapshot: dict[str, object]) -> bytes:
     access = accessibility_rows(development, row.get("region_code"))
     if access.empty:
         access_parts = [Paragraph("선택 지역의 30분 생활권 결과가 없습니다.", styles["base"])]
+    elif access.status.eq("computed").any() and any(
+            c in LIVING for c in available_categories(access[access.status.eq("computed")].iloc[0])):
+        origin = access.iloc[0].get("origin_name")
+        peers = development.get("accessibility_samples", pd.DataFrame())
+        access_parts = [Paragraph(f"출발 행정복지센터 · {_text(origin)}", styles["cell_bold"]), Spacer(1, 4),
+                        _table(_facility_frame(access, peers), styles),
+                        Paragraph("각 칸은 30분 안에 도착할 수 있는 시설 수이며, 전북 중앙값은 계산된 읍면동의 첫 출발 시각 기준입니다. KTDB 2025년 3월 평일 시간표와 OSM 보행망으로 계산한 "
+                                  "도보→버스→도보 추정이며, 영업시간·실시간 운행·주말은 반영하지 않습니다.", styles["small"]),
+                        Paragraph("시설 자료 · " + escape(SOURCE_SUMMARY), styles["small"])]
     else:
         origin = access.iloc[0].get("origin_name")
         access_parts = [Paragraph(f"출발 행정복지센터 · {_text(origin)}", styles["cell_bold"]), Spacer(1, 4),
                         _table(_accessibility_frame(access), styles),
                         Paragraph("KTDB 2025년 3월 평일 시간표·HIRA 2025년 3월 의료시설·OSM 보행망을 결합한 추정입니다. "
                                   "도보→버스→도보 경로이며 실시간 운행·주말·실제 진료 가능 여부는 반영하지 않습니다.", styles["small"])]
-    story.append(_section("2. 차 없이 30분 안에 갈 수 있는 의료시설", styles, *access_parts))
+    story.append(_section("2. 차 없이 30분 안에 갈 수 있는 생활시설", styles, *access_parts))
 
     # 3-year decline forecast.
     forecast_parts = [_table(build_forecast_rows(row), styles, [PAGE_WIDTH * w for w in (.3, .25, .3, .15)])]
