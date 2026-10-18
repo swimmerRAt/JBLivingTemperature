@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 전북 생활 온도 로고 (온도 핀): 지도 핀 안에 온도계, "우리 동네의 온도" -->
+  <path d="M256 36C150 36 76 116 76 214c0 128 180 262 180 262s180-134 180-262C436 116 362 36 256 36Z" fill="#ff6f0f"/>
+  <rect x="226" y="102" width="60" height="176" rx="30" fill="#fff"/>
+  <circle cx="256" cy="282" r="56" fill="#fff"/>
+  <rect x="244" y="168" width="24" height="112" rx="12" fill="#ff6f0f"/>
+  <circle cx="256" cy="282" r="34" fill="#ff6f0f"/>
+  <path d="M300 140h26M300 176h18M300 212h26" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
+</svg>

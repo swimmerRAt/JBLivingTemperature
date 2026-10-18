@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- B. 온기 있는 집: 앱 아이콘형. 지붕 위로 피어오르는 온기 -->
+  <rect width="512" height="512" rx="116" fill="#ff6f0f"/>
+  <path d="M206 168c-20-22 20-40 0-62M256 168c-20-22 20-40 0-62M306 168c-20-22 20-40 0-62"
+        fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+  <path d="M256 204 402 318v94a22 22 0 0 1-22 22H132a22 22 0 0 1-22-22v-94Z" fill="#fff" stroke="#fff" stroke-width="24" stroke-linejoin="round"/>
+  <rect x="226" y="338" width="60" height="96" rx="18" fill="#ff6f0f"/>
+</svg>

@@ -1,4 +1,6 @@
-from src.ui import build_forecast_rows, build_status_cards, format_metric
+import pandas as pd
+
+from src.ui import build_facility_rows, build_forecast_rows, build_status_cards, format_metric
 
 
 def test_format_metric_handles_none_and_percentages():
@@ -25,18 +27,38 @@ def test_build_status_cards_show_score_grade_and_forecast():
 
     cards = build_status_cards(snapshot)
 
-    assert [card["label"] for card in cards] == ["생활 점수", "상대 등급", "3년 후 청년 인구", "3년 감소 위험"]
+    assert [card["label"] for card in cards] == ["생활 점수", "차 없이 30분 이용 시설", "3년 후 청년 인구",
+                                                 "3년 감소 위험", "의료시설", "인구"]
     assert cards[0]["value"] == "72.4"
-    assert cards[1]["value"] == "B"
+    assert "상대 등급 B" in cards[0]["detail"]
+    assert cards[1]["value"] == "계산 전"
     assert cards[2]["value"] == "-8.2%"
     assert "2028년 예측" in cards[2]["detail"]
     assert cards[3]["value"] == "주의"
+
+
+def test_access_card_shows_earliest_departure_counts():
+    samples = pd.DataFrame([
+        {"region_code": "1", "departure_time": "12:00:00", "status": "computed", "accessible_facilities_30m": 9,
+         "accessible_medical_30m": 6, "accessible_pharmacy_30m": 3},
+        {"region_code": "1", "departure_time": "08:00:00", "status": "computed", "accessible_facilities_30m": 5,
+         "accessible_medical_30m": 3, "accessible_pharmacy_30m": 2},
+        {"region_code": "2", "departure_time": "08:00:00", "status": "unconfirmed_center", "accessible_facilities_30m": None,
+         "accessible_medical_30m": None, "accessible_pharmacy_30m": None},
+    ])
+    development = {"accessibility_samples": samples}
+    card = build_status_cards({"selected_region": {"region_code": "1"}, "development": development})[1]
+    assert card["value"] == "5곳"
+    assert card["detail"] == "평일 08:00 출발 · 병의원 3 · 약국 2"
+    card = build_status_cards({"selected_region": {"region_code": "2"}, "development": development})[1]
+    assert card["value"] == "계산 불가"
 
 
 def test_status_cards_say_when_no_forecast_is_connected():
     cards = build_status_cards({"selected_region": {"living_score": 50.0, "living_grade": "C"}})
     assert cards[2]["detail"] == "예측 미연결"
     assert cards[3]["value"] == "데이터 없음"
+    assert cards[4]["value"] == "데이터 없음"
 
 
 def test_forecast_rows_follow_the_planning_table():
@@ -60,3 +82,28 @@ def test_forecast_rows_show_extinction_index_tiers():
     index_row = rows[rows["항목"].str.startswith("지방소멸위험지수")].iloc[0]
     assert index_row["현재"] == "0.41 (소멸위험진입)"
     assert index_row["위험 단계"] == "위험"
+
+
+def test_access_card_counts_reachable_living_categories():
+    samples = pd.DataFrame([
+        {"region_code": "1", "departure_time": "08:00:00", "status": "computed", "accessible_facilities_30m": 5,
+         "accessible_medical_30m": 3, "accessible_pharmacy_30m": 2, "accessible_convenience_30m": 4,
+         "accessible_cinema_30m": 0, "accessible_large_store_30m": 0, "accessible_library_30m": 1},
+    ])
+    card = build_status_cards({"selected_region": {"region_code": "1"},
+                               "development": {"accessibility_samples": samples}})[1]
+    assert card["value"] == "4/6종"
+    assert card["detail"] == "평일 08:00 출발 · 병의원·약국 5곳 · 없음: 대형마트·백화점, 영화관"
+
+
+def test_facility_rows_compare_with_jeonbuk_median():
+    peers = pd.DataFrame([
+        {"status": "computed", "accessible_medical_30m": m, "accessible_pharmacy_30m": 1, "accessible_cafe_30m": c}
+        for m, c in [(1, 0), (5, 2), (9, 4)]
+    ] + [{"status": "unconfirmed_center", "accessible_medical_30m": None, "accessible_pharmacy_30m": None,
+          "accessible_cafe_30m": None}])
+    row = peers.iloc[1]
+    rows = build_facility_rows(row, peers)
+    assert rows["시설"].tolist() == ["병의원", "약국", "카페"]
+    assert rows.set_index("시설").loc["카페", "30분 내"] == "2곳"
+    assert rows.set_index("시설").loc["병의원", "전북 읍면동 중앙값"] == "5곳"

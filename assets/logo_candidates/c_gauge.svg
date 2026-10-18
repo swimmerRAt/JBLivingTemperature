@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- C. 생활 온도 게이지: 차가움(파랑)→따뜻함(주황), 바늘이 따뜻한 쪽을 가리킴 -->
+  <defs>
+    <linearGradient id="g" x1="76" y1="0" x2="436" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3c6fcf"/><stop offset=".5" stop-color="#f5c28f"/><stop offset="1" stop-color="#ff6f0f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="#fff"/>
+  <path d="M100 340a156 156 0 0 1 312 0" fill="none" stroke="url(#g)" stroke-width="52" stroke-linecap="round"/>
+  <path d="M256 340 352 250" stroke="#212124" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="256" cy="340" r="34" fill="#212124"/>
+  <circle cx="256" cy="340" r="12" fill="#ff6f0f"/>
+</svg>

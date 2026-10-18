@@ -106,7 +106,7 @@ def business_stage(meets: object, probability_1y: float, establishments: float =
 
 
 def worst_stage(*stages: str | None) -> str | None:
-    known = [stage for stage in stages if stage]
+    known = [stage for stage in stages if isinstance(stage, str) and stage in STAGES]
     return max(known, key=STAGES.index) if known else None
 
 

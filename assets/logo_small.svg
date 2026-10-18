@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 전북 생활 온도 로고 · 작은 크기(파비콘·32px 이하) 전용: 눈금 생략, 선을 굵게 -->
+  <path d="M256 20C144 20 64 104 64 210c0 136 192 282 192 282s192-146 192-282C448 104 368 20 256 20Z" fill="#ff6f0f"/>
+  <rect x="216" y="90" width="80" height="190" rx="40" fill="#fff"/>
+  <circle cx="256" cy="286" r="72" fill="#fff"/>
+  <rect x="240" y="170" width="32" height="116" rx="16" fill="#ff6f0f"/>
+  <circle cx="256" cy="286" r="44" fill="#ff6f0f"/>
+</svg>
